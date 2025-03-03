@@ -1,0 +1,4 @@
+site_name: bydantic
+site_url: https://kylehusmann.com/bydantic
+theme:
+  name: material
