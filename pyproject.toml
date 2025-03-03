@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bydantic"
+version = "0.1.0"
+description = "A type-aware bitfield serializing / deserializing library for Python"
+authors = [{name = "Kyle Husmann", email = "bydantic@kylehusmann.com"}]
+readme = "README.md"
+license = {text = "Apache-2.0"}
+dependencies = [
+    "typing_extensions >=4.1.0",
+]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: System :: Hardware",
+]
+requires-python = ">=3.10"
+
+[project.urls]
+"Homepage" = "https://github.com/khusmann/bydantic"
+"Bug Tracker" = "https://github.com/khusmann/bydantic/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
