@@ -255,8 +255,8 @@ def test_dyn_error():
     Foo(a=0, b=1).to_bits()
     Foo(a=1, b="a").to_bits()
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=re.escape("error in field 'b' of 'Foo': expected str, got int")):
         Foo(a=1, b=1).to_bits()
 
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match=re.escape("error in field 'b' of 'Foo': expected int, got str")):
         Foo(a=0, b="a").to_bits()

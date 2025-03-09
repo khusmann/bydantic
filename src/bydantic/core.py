@@ -695,8 +695,6 @@ class Bitfield(t.Generic[_DynOptsT]):
                     f"error in field {name!r} of {self.__class__.__name__!r}: {e}"
                 ) from e
 
-            proxy[name] = value
-
         return stream.unreorder(self._reorder)
 
     @classmethod
