@@ -271,8 +271,34 @@ def undisguise(x: BFTypeDisguised[t.Any]) -> BFType:
     raise TypeError(f"expected a field type, got {x!r}")
 
 
+@t.overload
+def bf_bits(
+    n: int, *,
+    default: t.Sequence[bool],
+) -> BFTypeDisguised[t.Tuple[bool, ...]]: ...
+
+
+@t.overload
+def bf_bits(n: int) -> BFTypeDisguised[t.Tuple[bool, ...]]: ...
+
+
 def bf_bits(n: int, *, default: t.Sequence[bool] | NotProvided = NOT_PROVIDED) -> BFTypeDisguised[t.Tuple[bool, ...]]:
     return disguise(BFBits(n, default))
+
+
+@t.overload
+def bf_map(
+    field: BFTypeDisguised[_T],
+    vm: ValueMapper[_T, _P], *,
+    default: _P,
+) -> BFTypeDisguised[_P]: ...
+
+
+@t.overload
+def bf_map(
+    field: BFTypeDisguised[_T],
+    vm: ValueMapper[_T, _P],
+) -> BFTypeDisguised[_P]: ...
 
 
 def bf_map(
@@ -281,6 +307,17 @@ def bf_map(
     default: _P | NotProvided = NOT_PROVIDED
 ) -> BFTypeDisguised[_P]:
     return disguise(BFMap(undisguise(field), vm, default))
+
+
+def _bf_map_helper(
+    field: BFTypeDisguised[_T],
+    vm: ValueMapper[_T, _P], *,
+    default: _P | NotProvided = NOT_PROVIDED
+) -> BFTypeDisguised[_P]:
+    if is_provided(default):
+        return bf_map(field, vm, default=default)
+    else:
+        return bf_map(field, vm)
 
 
 @t.overload
@@ -295,6 +332,14 @@ def bf_int(n: int, *, default: int | NotProvided = NOT_PROVIDED) -> BFTypeDisgui
     return disguise(BFInt(n, default))
 
 
+@t.overload
+def bf_bool(*, default: bool) -> BFTypeDisguised[bool]: ...
+
+
+@t.overload
+def bf_bool() -> BFTypeDisguised[bool]: ...
+
+
 def bf_bool(*, default: bool | NotProvided = NOT_PROVIDED) -> BFTypeDisguised[bool]:
     class IntAsBool:
         def forward(self, x: int) -> bool:
@@ -303,10 +348,19 @@ def bf_bool(*, default: bool | NotProvided = NOT_PROVIDED) -> BFTypeDisguised[bo
         def back(self, y: bool) -> int:
             return 1 if y else 0
 
-    return bf_map(bf_int(1), IntAsBool(), default=default)
+    return _bf_map_helper(bf_int(1), IntAsBool(), default=default)
 
 
 _E = t.TypeVar("_E", bound=IntEnum | IntFlag)
+
+
+@t.overload
+def bf_int_enum(enum: t.Type[_E], n: int, *,
+                default: _E) -> BFTypeDisguised[_E]: ...
+
+
+@t.overload
+def bf_int_enum(enum: t.Type[_E], n: int) -> BFTypeDisguised[_E]: ...
 
 
 def bf_int_enum(enum: t.Type[_E], n: int, *, default: _E | NotProvided = NOT_PROVIDED) -> BFTypeDisguised[_E]:
@@ -317,7 +371,22 @@ def bf_int_enum(enum: t.Type[_E], n: int, *, default: _E | NotProvided = NOT_PRO
         def back(self, y: _E) -> int:
             return y.value
 
-    return bf_map(bf_int(n), IntAsEnum(), default=default)
+    return _bf_map_helper(bf_int(n), IntAsEnum(), default=default)
+
+
+@t.overload
+def bf_list(
+    item: t.Type[_T] | BFTypeDisguised[_T],
+    n: int, *,
+    default: t.List[_T]
+) -> BFTypeDisguised[t.List[_T]]: ...
+
+
+@t.overload
+def bf_list(
+    item: t.Type[_T] | BFTypeDisguised[_T],
+    n: int
+) -> BFTypeDisguised[t.List[_T]]: ...
 
 
 def bf_list(
@@ -340,8 +409,16 @@ def bf_lit(field: BFTypeDisguised[_LiteralT], *, default: _P) -> BFTypeDisguised
     return disguise(BFLit(undisguise(field), default))
 
 
-def bf_lit_int(n: int, *, default: _LiteralT) -> BFTypeDisguised[_LiteralT]:
+def bf_lit_int(n: int, *, default: int) -> BFTypeDisguised[int]:
     return bf_lit(bf_int(n), default=default)
+
+
+@t.overload
+def bf_bytes(n: int, *, default: bytes) -> BFTypeDisguised[bytes]: ...
+
+
+@t.overload
+def bf_bytes(n: int) -> BFTypeDisguised[bytes]: ...
 
 
 def bf_bytes(n: int, *, default: bytes | NotProvided = NOT_PROVIDED) -> BFTypeDisguised[bytes]:
@@ -357,7 +434,19 @@ def bf_bytes(n: int, *, default: bytes | NotProvided = NOT_PROVIDED) -> BFTypeDi
         def back(self, y: bytes) -> t.List[int]:
             return list(y)
 
-    return bf_map(bf_list(bf_int(8), n), ListAsBytes(), default=default)
+    return _bf_map_helper(bf_list(bf_int(8), n), ListAsBytes(), default=default)
+
+
+@t.overload
+def bf_str(
+    n: int,
+    encoding: str = "utf-8", *,
+    default: str,
+) -> BFTypeDisguised[str]: ...
+
+
+@t.overload
+def bf_str(n: int, encoding: str = "utf-8") -> BFTypeDisguised[str]: ...
 
 
 def bf_str(n: int, encoding: str = "utf-8", *, default: str | NotProvided = NOT_PROVIDED) -> BFTypeDisguised[str]:
@@ -375,12 +464,27 @@ def bf_str(n: int, encoding: str = "utf-8", *, default: str | NotProvided = NOT_
         def back(self, y: str) -> bytes:
             return y.ljust(n, "\0").encode(encoding)
 
-    return bf_map(bf_bytes(n), BytesAsStr(), default=default)
+    return _bf_map_helper(bf_bytes(n), BytesAsStr(), default=default)
+
+
+@t.overload
+def bf_dyn(
+    fn: t.Callable[[t.Any], t.Type[_T] | BFTypeDisguised[_T]] |
+    t.Callable[[t.Any, int], t.Type[_T] | BFTypeDisguised[_T]], *,
+    default: _T
+) -> BFTypeDisguised[_T]: ...
+
+
+@t.overload
+def bf_dyn(
+    fn: t.Callable[[t.Any], t.Type[_T] | BFTypeDisguised[_T]] |
+    t.Callable[[t.Any, int], t.Type[_T] | BFTypeDisguised[_T]]
+) -> BFTypeDisguised[_T]: ...
 
 
 def bf_dyn(
     fn: t.Callable[[t.Any], t.Type[_T] | BFTypeDisguised[_T]] |
-        t.Callable[[t.Any, int], t.Type[_T] | BFTypeDisguised[_T]],
+        t.Callable[[t.Any, int], t.Type[_T] | BFTypeDisguised[_T]], *,
     default: _T | NotProvided = NOT_PROVIDED
 ) -> BFTypeDisguised[_T]:
     n_params = len(inspect.signature(fn).parameters)
@@ -402,13 +506,34 @@ def bf_dyn(
             raise ValueError(f"unsupported number of parameters: {n_params}")
 
 
+@t.overload
+def bf_none(*, default: None) -> BFTypeDisguised[None]: ...
+
+
+@t.overload
+def bf_none() -> BFTypeDisguised[None]: ...
+
+
 def bf_none(*, default: None | NotProvided = NOT_PROVIDED) -> BFTypeDisguised[None]:
     return disguise(BFNone(default=default))
 
 
+@t.overload
+def bf_bitfield(
+    cls: t.Type[_BitfieldT], n: int, *,
+    default: _BitfieldT
+) -> BFTypeDisguised[_BitfieldT]: ...
+
+
+@t.overload
+def bf_bitfield(
+    cls: t.Type[_BitfieldT], n: int
+) -> BFTypeDisguised[_BitfieldT]: ...
+
+
 def bf_bitfield(
     cls: t.Type[_BitfieldT],
-    n: int,
+    n: int, *,
     default: _BitfieldT | NotProvided = NOT_PROVIDED
 ) -> BFTypeDisguised[_BitfieldT]:
     return disguise(BFBitfield(cls, n, default=default))
