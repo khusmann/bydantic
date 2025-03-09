@@ -6,9 +6,12 @@ import re
 
 from enum import IntEnum
 
-from bydantic import (
+from bydantic.utils import (
     reorder_bits,
-    unreorder_bits,
+    unreorder_bits
+)
+
+from bydantic import (
     Bitfield,
     bf_str,
     bf_bytes,
