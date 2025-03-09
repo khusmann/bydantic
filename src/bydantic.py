@@ -153,6 +153,12 @@ class BitStream:
         rebased = self._bits[self._pos:]
         return BitStream(rebased.reorder(order))
 
+    def as_bits(self) -> Bits:
+        return self._bits[self._pos:]
+
+    def as_bytes(self) -> bytes:
+        return self.as_bits().to_bytes()
+
 
 class AttrProxy(t.Mapping[str, t.Any]):
     _data: t.Dict[str, t.Any]
@@ -346,7 +352,7 @@ def bftype_from_bitstream(bftype: BFType, stream: BitStream, proxy: AttrProxy, o
 
         case BFBitfield(inner=inner, n=n):
             bits, stream = stream.take(n)
-            return inner.from_bits(bits, opts), stream
+            return inner.from_bits_exact(bits, opts), stream
 
 
 def is_bitfield(x: t.Any) -> t.TypeGuard[Bitfield[t.Any]]:
@@ -656,21 +662,68 @@ class Bitfield(t.Generic[_DynOptsT]):
         return acc
 
     @classmethod
-    def from_bytes(cls, data: t.ByteString, opts: _DynOptsT | None = None):
-        return cls.from_bits(Bits.from_bytes(data), opts)
+    def from_bytes_exact(cls, data: t.ByteString, opts: _DynOptsT | None = None):
+        out, remaining = cls.from_bytes(data, opts)
 
-    @classmethod
-    def from_bits(cls, bits: Bits, opts: _DynOptsT | None = None):
-        stream = BitStream(bits)
-
-        out, stream = cls.from_bitstream(stream, opts)
-
-        if stream.remaining():
+        if remaining:
             raise ValueError(
-                f"Bits left over after parsing {cls.__name__} ({stream.remaining()})"
+                f"Bytes left over after parsing {cls.__name__} ({len(remaining)})"
             )
 
         return out
+
+    @classmethod
+    def from_bits_exact(cls, bits: Bits, opts: _DynOptsT | None = None):
+        out, remaining = cls.from_bits(bits, opts)
+
+        if remaining:
+            raise ValueError(
+                f"Bits left over after parsing {cls.__name__} ({len(remaining)})"
+            )
+
+        return out
+
+    @classmethod
+    def from_bits(cls, bits: Bits, opts: _DynOptsT | None = None) -> t.Tuple[Self, t.Tuple[bool, ...]]:
+        out, stream = cls.from_bitstream(BitStream(bits), opts)
+        return out, stream.as_bits()
+
+    @classmethod
+    def from_bytes(cls, data: t.ByteString, opts: _DynOptsT | None = None):
+        out, stream = cls.from_bitstream(
+            BitStream(Bits.from_bytes(data)), opts
+        )
+        return out, stream.as_bytes()
+
+    @classmethod
+    def from_bytes_batch(
+        cls,
+        data: t.ByteString,
+        opts: _DynOptsT | None = None,
+        consume_errors: bool = False
+    ) -> t.Tuple[t.List[Self], bytes]:
+        out: t.List[Self] = []
+
+        stream = BitStream(Bits.from_bytes(data))
+
+        while stream.remaining():
+            try:
+                item, stream = cls.from_bitstream(stream, opts)
+                out.append(item)
+            except EOFError:
+                break
+            except Exception:
+                if consume_errors:
+                    _, stream = stream.take_bytes(1)
+                else:
+                    raise
+
+            if not stream.remaining() % 8:
+                raise ValueError(
+                    f"expected byte alignment, got {stream.remaining()} bits"
+                )
+
+        return out, stream.as_bytes()
 
     @classmethod
     def from_bitstream(
@@ -696,29 +749,6 @@ class Bitfield(t.Generic[_DynOptsT]):
             proxy[name] = value
 
         return cls(**proxy), stream
-
-    @classmethod
-    def from_bitstream_batch(
-        cls,
-        stream: BitStream,
-        opts: _DynOptsT | None = None,
-        consume_errors: bool = False
-    ) -> t.Tuple[t.List[Self], BitStream]:
-        out: t.List[Self] = []
-
-        while stream.remaining():
-            try:
-                item, stream = cls.from_bitstream(stream, opts)
-                out.append(item)
-            except EOFError:
-                break
-            except Exception:
-                if consume_errors:
-                    _, stream = stream.take_bytes(1)
-                else:
-                    raise
-
-        return out, stream
 
     def to_bits(self, opts: _DynOptsT | None = None) -> Bits:
         proxy = AttrProxy({**self.__dict__, self._DYN_OPTS_STR: opts})

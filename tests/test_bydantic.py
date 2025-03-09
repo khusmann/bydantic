@@ -30,7 +30,7 @@ def test_basic():
 
     work = Work(a=1, b=[1, 2, 3, 4], c="abc", d=b"abcd")
     assert work.to_bytes() == b'\x12\x9cabcabcd'
-    assert Work.from_bytes(work.to_bytes()) == work
+    assert Work.from_bytes_exact(work.to_bytes()) == work
 
 
 def test_str_field():
@@ -39,7 +39,7 @@ def test_str_field():
 
     work = Work(a="hello")
     assert work.to_bytes() == b'hello\x00\x00\x00'
-    assert Work.from_bytes(work.to_bytes()) == work
+    assert Work.from_bytes_exact(work.to_bytes()) == work
 
     with pytest.raises(ValueError):
         Work(a="123456789").to_bytes()
@@ -63,11 +63,11 @@ def test_basic_context():
 
     foo = Foo(z=None)
     assert foo.to_bytes() == b''
-    assert Foo.from_bytes(foo.to_bytes()) == foo
+    assert Foo.from_bytes_exact(foo.to_bytes()) == foo
 
     foo = Foo(z=5)
     assert foo.to_bytes(Opts(a=10)) == b'\x05'
-    foo2 = Foo.from_bytes(b'\x05', Opts(a=10))
+    foo2 = Foo.from_bytes_exact(b'\x05', Opts(a=10))
     assert foo2 == foo
 
     assert foo.dyn_opts == None
@@ -85,11 +85,11 @@ def test_basic_subclasses():
 
     work = Work(a=1, b=[1, 2, 3, 4])
     assert work.to_bytes() == b'\x12\x9c'
-    assert Work.from_bytes(work.to_bytes()) == work
+    assert Work.from_bytes_exact(work.to_bytes()) == work
 
     work2 = Work2(a=1, b=[1, 2, 3, 4], c="abc", d=b"abcd")
     assert work2.to_bytes() == b'\x12\x9cabcabcd'
-    assert Work2.from_bytes(work2.to_bytes()) == work2
+    assert Work2.from_bytes_exact(work2.to_bytes()) == work2
 
 
 def test_basic_reorder():
@@ -103,7 +103,7 @@ def test_basic_reorder():
 
     work = Work(a=1, b=[1, 2, 3, 4], c="abc", d=b"abcd")
     assert work.to_bytes() == b'abcabcd\x12\x9c'
-    assert Work.from_bytes(work.to_bytes()) == work
+    assert Work.from_bytes_exact(work.to_bytes()) == work
 
 
 def test_classvars():
@@ -115,7 +115,7 @@ def test_classvars():
 
     work = Work(a=1, b=2)
     assert work.to_bytes() == b'\x12'
-    assert Work.from_bytes(work.to_bytes()) == work
+    assert Work.from_bytes_exact(work.to_bytes()) == work
 
 
 class BarEnum(IntEnum):
@@ -170,7 +170,7 @@ def test_kitchen_sink():
     )
 
     assert f.to_bytes() == b'i\x00\x9d\xdb\xdc\x9b\x19?\xfehij\x00@ \x0c\x80L\x04\xa02C+cczC+ccx\x02\x01\x00` \n\x03\x00\xe0@\x13'
-    assert Foo.from_bytes(f.to_bytes()) == f
+    assert Foo.from_bytes_exact(f.to_bytes()) == f
 
 
 def test_default_len_err():
