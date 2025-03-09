@@ -7,7 +7,7 @@ import inspect
 from enum import IntEnum, IntFlag, Enum
 
 
-def reorder_pairs(order: t.Sequence[int], size: int):
+def make_pairs(order: t.Sequence[int], size: int):
     if not all(i < size for i in order) or not all(i >= 0 for i in order):
         raise ValueError(
             f"some indices in the reordering are out-of-bounds"
@@ -26,138 +26,102 @@ def reorder_pairs(order: t.Sequence[int], size: int):
     )
 
 
-class Bits(t.Tuple[bool, ...]):
-    def __new__(cls, bits: t.Iterable[bool] | str = ()) -> Bits:
-        if isinstance(bits, str):
-            bits = (bit == "1" for bit in bits if bit in ("0", "1"))
-        return super().__new__(cls, tuple(bits))
+def reorder_bits(data: t.Sequence[bool], order: t.Sequence[int]) -> t.Tuple[bool, ...]:
+    if not order:
+        return tuple(data)
 
-    @t.overload
-    def __getitem__(self, index: t.SupportsIndex) -> bool:
-        ...
+    pairs = make_pairs(order, len(data))
 
-    @t.overload
-    def __getitem__(self, index: slice) -> Bits:
-        ...
+    return tuple(data[i] for _, i in pairs)
 
-    def __getitem__(self, index: t.SupportsIndex | slice) -> bool | Bits:
-        if isinstance(index, slice):
-            return Bits(super().__getitem__(index))
-        return super().__getitem__(index)
 
-    def __add__(self, other: t.Tuple[object, ...]) -> Bits:
-        return Bits(super().__add__(tuple(bool(bit) for bit in other)))
+def unreorder_bits(data: t.Sequence[bool], order: t.Sequence[int]) -> t.Tuple[bool, ...]:
+    if not order:
+        return tuple(data)
 
-    def __repr__(self) -> str:
-        str_bits = "".join(str(int(bit)) for bit in self)
-        return f"{self.__class__.__name__}({str_bits!r})"
+    pairs = sorted(make_pairs(order, len(data)), key=lambda x: x[1])
 
-    def reorder(self, order: t.Sequence[int]):
-        if not order:
-            return self
+    return tuple(data[i] for i, _ in pairs)
 
-        pairs = reorder_pairs(order, len(self))
 
-        return Bits(self[i] for _, i in pairs)
+def bytes_to_bits(data: t.ByteString) -> t.Tuple[bool, ...]:
+    return tuple(
+        bit for byte in data for bit in int_to_bits(byte, 8)
+    )
 
-    def unreorder(self, order: t.Sequence[int]):
-        if not order:
-            return self
 
-        pairs = sorted(reorder_pairs(order, len(self)), key=lambda x: x[1])
+def int_to_bits(x: int, n: int) -> t.Tuple[bool, ...]:
+    if x < 0:
+        raise ValueError("int must be non-negative")
 
-        return Bits(self[i] for i, _ in pairs)
+    if x.bit_length() > n:
+        raise ValueError(f"int too large for {n} bits")
 
-    @classmethod
-    def from_str(cls, data: str, encoding: str = "utf-8") -> Bits:
-        return cls.from_bytes(data.encode(encoding))
+    return tuple(x & (1 << (n - i - 1)) != 0 for i in range(n))
 
-    @classmethod
-    def from_bytes(cls, data: t.ByteString) -> Bits:
-        bits: t.List[bool] = []
-        for byte in data:
-            bits += cls.from_int(byte, 8)
-        return cls(bits)
 
-    @classmethod
-    def from_int(cls, value: int, n_bits: int) -> Bits:
-        if n_bits <= 0:
-            raise ValueError("Number of bits must be positive")
-        if value >= 1 << n_bits:
-            raise ValueError(f"Value {value} is too large for {n_bits} bits")
-        return cls(
-            value & (1 << (n_bits - i - 1)) != 0 for i in range(n_bits)
-        )
+def bits_to_int(bits: t.Sequence[bool]) -> int:
+    return sum((bit << (len(bits) - i - 1) for i, bit in enumerate(bits)))
 
-    def to_int(self) -> int:
-        out = 0
-        for i, bit in enumerate(self):
-            out |= bit << (len(self) - i - 1)
-        return out
 
-    def to_bytes(self) -> bytes:
-        if len(self) % 8:
-            raise ValueError("Bits is not byte aligned (multiple of 8 bits)")
-        return bytes(self[i:i+8].to_int() for i in range(0, len(self), 8))
+def bits_to_bytes(bits: t.Sequence[bool]) -> bytes:
+    if len(bits) % 8:
+        raise ValueError("bits must be byte aligned (multiple of 8 bits)")
 
-    def to_str(self, encoding: str = "utf-8") -> str:
-        return self.to_bytes().decode(encoding)
+    return bytes(
+        bits_to_int(bits[i:i+8]) for i in range(0, len(bits), 8)
+    )
 
 
 class BitStream:
-    _bits: Bits
+    _bits: t.Tuple[bool, ...]
     _pos: int
 
-    def __init__(self, bits: Bits = Bits(), pos: int = 0) -> None:
-        self._bits = bits
+    def __init__(self, bits: t.Sequence[bool] = (), pos: int = 0) -> None:
+        self._bits = tuple(bits)
         self._pos = pos
 
-    def remaining(self):
+    @classmethod
+    def from_bits(cls, bits: t.Sequence[bool]) -> BitStream:
+        return cls(bits)
+
+    @classmethod
+    def from_bytes(cls, data: t.ByteString) -> BitStream:
+        return cls(bytes_to_bits(data))
+
+    def bits_remaining(self):
         return len(self._bits) - self._pos
 
+    def bytes_remaining(self):
+        if self.bits_remaining() % 8:
+            raise ValueError(
+                "BitStream is not byte aligned (multiple of 8 bits)")
+
+        return self.bits_remaining() // 8
+
     def take(self, n: int):
-        if n > self.remaining():
+        if n > self.bits_remaining():
             raise EOFError
 
-        return Bits(self._bits[self._pos:n+self._pos]), BitStream(self._bits, self._pos+n)
+        return self._bits[self._pos:n+self._pos], BitStream(self._bits, self._pos+n)
 
-    def take_bytes(self, n: int):
-        value, stream = self.take(n*8)
-        return value.to_bytes(), stream
+    def take_int(self, n: int):
+        value, stream = self.take(n)
+        return bits_to_int(value), stream
 
-    def peek(self, n: int = 1):
-        if n > self.remaining():
-            raise EOFError
-
-        return self._bits[self._pos:n+self._pos]
-
-    def peek_bytes(self, n: int):
-        return self.peek(n*8).to_bytes()
+    def take_bytes(self, n_bytes: int):
+        value, stream = self.take(n_bytes*8)
+        return bits_to_bytes(value), stream
 
     def __repr__(self) -> str:
         str_bits = "".join(str(int(bit)) for bit in self._bits[self._pos:])
         return f"{self.__class__.__name__}({str_bits})"
 
-    def extend(self, other: Bits):
-        return BitStream(
-            self._bits[self._pos:] + other,
-        )
-
-    def extend_bytes(self, data: bytes):
-        return self.extend(Bits.from_bytes(data))
-
-    def reorder(self, order: t.Sequence[int]):
-        if not order:
-            return self
-
-        rebased = self._bits[self._pos:]
-        return BitStream(rebased.reorder(order))
-
-    def as_bits(self) -> Bits:
-        return self._bits[self._pos:]
+    def as_bits(self) -> t.Tuple[bool, ...]:
+        return self.take(self.bits_remaining())[0]
 
     def as_bytes(self) -> bytes:
-        return self.as_bits().to_bytes()
+        return self.take_bytes(self.bytes_remaining())[0]
 
 
 class AttrProxy(t.Mapping[str, t.Any]):
@@ -233,7 +197,12 @@ class IntScale(t.NamedTuple):
 
 class BFBits(t.NamedTuple):
     n: int
-    default: Bits | NotProvided
+    default: t.Sequence[bool] | NotProvided
+
+
+class BFInt(t.NamedTuple):
+    n: int
+    default: int | NotProvided
 
 
 class BFList(t.NamedTuple):
@@ -275,6 +244,7 @@ class BFNone(t.NamedTuple):
 
 BFType = t.Union[
     BFBits,
+    BFInt,
     BFList,
     BFMap,
     BFDynSelf,
@@ -287,7 +257,7 @@ BFType = t.Union[
 
 def bftype_length(bftype: BFType) -> int | None:
     match bftype:
-        case BFBits(n=n) | BFBitfield(n=n):
+        case BFBits(n=n) | BFBitfield(n=n) | BFInt(n=n):
             return n
 
         case BFList(inner=inner, n=n):
@@ -306,7 +276,7 @@ def bftype_length(bftype: BFType) -> int | None:
 
 def bftype_has_children_with_default(bftype: BFType) -> bool:
     match bftype:
-        case BFBits() | BFBitfield() | BFNone() | BFDynSelf() | BFDynSelfN():
+        case BFBits() | BFInt() | BFBitfield() | BFNone() | BFDynSelf() | BFDynSelfN():
             return False
 
         case BFList(inner=inner) | BFMap(inner=inner) | BFLit(inner=inner):
@@ -317,6 +287,9 @@ def bftype_from_bitstream(bftype: BFType, stream: BitStream, proxy: AttrProxy, o
     match bftype:
         case BFBits(n=n):
             return stream.take(n)
+
+        case BFInt(n=n):
+            return stream.take_int(n)
 
         case BFList(inner=inner, n=n):
             acc: t.List[t.Any] = []
@@ -337,7 +310,7 @@ def bftype_from_bitstream(bftype: BFType, stream: BitStream, proxy: AttrProxy, o
             return bftype_from_bitstream(undisguise(fn(proxy)), stream, proxy, opts)
 
         case BFDynSelfN(fn=fn):
-            return bftype_from_bitstream(undisguise(fn(proxy, stream.remaining())), stream, proxy, opts)
+            return bftype_from_bitstream(undisguise(fn(proxy, stream.bits_remaining())), stream, proxy, opts)
 
         case BFLit(inner=inner, default=default):
             value, stream = bftype_from_bitstream(
@@ -363,17 +336,24 @@ def is_bitfield_class(x: t.Type[t.Any]) -> t.TypeGuard[t.Type[Bitfield[t.Any]]]:
     return issubclass(x, Bitfield)
 
 
-def bftype_to_bits(bftype: BFType, value: t.Any, proxy: AttrProxy, opts: t.Any) -> Bits:
+def bftype_to_bits(bftype: BFType, value: t.Any, proxy: AttrProxy, opts: t.Any) -> t.Tuple[bool, ...]:
     match bftype:
         case BFBits(n=n):
             if len(value) != n:
                 raise ValueError(f"expected {n} bits, got {len(value)}")
-            return Bits(value)
+            return value
+
+        case BFInt(n=n):
+            if not isinstance(value, int):
+                raise TypeError(
+                    f"expected int, got {type(value).__name__}"
+                )
+            return int_to_bits(value, n)
 
         case BFList(inner=inner, n=n):
             if len(value) != n:
                 raise ValueError(f"expected {n} items, got {len(value)}")
-            return sum([bftype_to_bits(inner, item, proxy, opts) for item in value], Bits())
+            return sum([bftype_to_bits(inner, item, proxy, opts) for item in value], ())
 
         case BFMap(inner=inner, vm=vm):
             return bftype_to_bits(inner, vm.back(value), proxy, opts)
@@ -402,7 +382,7 @@ def bftype_to_bits(bftype: BFType, value: t.Any, proxy: AttrProxy, opts: t.Any) 
         case BFNone():
             if value is not None:
                 raise ValueError(f"expected None, got {value!r}")
-            return Bits()
+            return ()
 
         case BFBitfield(inner=inner, n=n):
             if not is_bitfield(value):
@@ -445,7 +425,7 @@ def undisguise(x: BFTypeDisguised[t.Any]) -> BFType:
     raise TypeError(f"expected a field type, got {x!r}")
 
 
-def bf_bits(n: int, *, default: Bits | NotProvided = NOT_PROVIDED) -> BFTypeDisguised[Bits]:
+def bf_bits(n: int, *, default: t.Sequence[bool] | NotProvided = NOT_PROVIDED) -> BFTypeDisguised[t.Tuple[bool, ...]]:
     return disguise(BFBits(n, default))
 
 
@@ -466,14 +446,7 @@ def bf_int(n: int) -> BFTypeDisguised[int]: ...
 
 
 def bf_int(n: int, *, default: int | NotProvided = NOT_PROVIDED) -> BFTypeDisguised[int]:
-    class BitsAsInt:
-        def forward(self, x: Bits) -> int:
-            return x.to_int()
-
-        def back(self, y: int) -> Bits:
-            return Bits.from_int(y, n)
-
-    return bf_map(bf_bits(n), BitsAsInt(), default=default)
+    return disguise(BFInt(n, default))
 
 
 def bf_bool(*, default: bool | NotProvided = NOT_PROVIDED) -> BFTypeDisguised[bool]:
@@ -673,7 +646,7 @@ class Bitfield(t.Generic[_DynOptsT]):
         return out
 
     @classmethod
-    def from_bits_exact(cls, bits: Bits, opts: _DynOptsT | None = None):
+    def from_bits_exact(cls, bits: t.Sequence[bool], opts: _DynOptsT | None = None):
         out, remaining = cls.from_bits(bits, opts)
 
         if remaining:
@@ -684,14 +657,14 @@ class Bitfield(t.Generic[_DynOptsT]):
         return out
 
     @classmethod
-    def from_bits(cls, bits: Bits, opts: _DynOptsT | None = None) -> t.Tuple[Self, t.Tuple[bool, ...]]:
+    def from_bits(cls, bits: t.Sequence[bool], opts: _DynOptsT | None = None) -> t.Tuple[Self, t.Tuple[bool, ...]]:
         out, stream = cls.from_bitstream(BitStream(bits), opts)
         return out, stream.as_bits()
 
     @classmethod
     def from_bytes(cls, data: t.ByteString, opts: _DynOptsT | None = None):
         out, stream = cls.from_bitstream(
-            BitStream(Bits.from_bytes(data)), opts
+            BitStream.from_bytes(data), opts
         )
         return out, stream.as_bytes()
 
@@ -704,9 +677,9 @@ class Bitfield(t.Generic[_DynOptsT]):
     ) -> t.Tuple[t.List[Self], bytes]:
         out: t.List[Self] = []
 
-        stream = BitStream(Bits.from_bytes(data))
+        stream = BitStream.from_bytes(data)
 
-        while stream.remaining():
+        while stream.bits_remaining():
             try:
                 item, stream = cls.from_bitstream(stream, opts)
                 out.append(item)
@@ -718,9 +691,9 @@ class Bitfield(t.Generic[_DynOptsT]):
                 else:
                     raise
 
-            if not stream.remaining() % 8:
+            if not stream.bits_remaining() % 8:
                 raise ValueError(
-                    f"expected byte alignment, got {stream.remaining()} bits"
+                    f"expected byte alignment, got {stream.bits_remaining()} bits"
                 )
 
         return out, stream.as_bytes()
@@ -733,7 +706,8 @@ class Bitfield(t.Generic[_DynOptsT]):
     ):
         proxy: AttrProxy = AttrProxy({cls._DYN_OPTS_STR: opts})
 
-        stream = stream.reorder(cls._reorder)
+        stream = BitStream.from_bits(
+            reorder_bits(stream.as_bits(), cls._reorder))
 
         for name, field in cls._fields.items():
             try:
@@ -750,10 +724,10 @@ class Bitfield(t.Generic[_DynOptsT]):
 
         return cls(**proxy), stream
 
-    def to_bits(self, opts: _DynOptsT | None = None) -> Bits:
+    def to_bits(self, opts: _DynOptsT | None = None) -> t.Tuple[bool, ...]:
         proxy = AttrProxy({**self.__dict__, self._DYN_OPTS_STR: opts})
 
-        acc: Bits = Bits()
+        acc: t.Tuple[bool, ...] = ()
 
         for name, field in self._fields.items():
             value = getattr(self, name)
@@ -765,10 +739,10 @@ class Bitfield(t.Generic[_DynOptsT]):
                     f"error in field {name!r} of {self.__class__.__name__!r}: {e}"
                 ) from e
 
-        return acc.unreorder(self._reorder)
+        return unreorder_bits(acc, self._reorder)
 
     def to_bytes(self, opts: _DynOptsT | None = None) -> bytes:
-        return self.to_bits(opts).to_bytes()
+        return bits_to_bytes(self.to_bits(opts))
 
     def __init_subclass__(cls):
         cls._fields = cls._fields.copy()

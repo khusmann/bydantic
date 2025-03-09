@@ -7,7 +7,8 @@ import re
 from enum import IntEnum
 
 from bydantic import (
-    Bits,
+    reorder_bits,
+    unreorder_bits,
     Bitfield,
     bf_str,
     bf_bytes,
@@ -236,8 +237,8 @@ def test_default_children_err():
 
 
 def test_bit_reorder():
-    b = Bits("101100")
+    b = tuple(i == "1" for i in "101100")
     order = [1, 3, 5]
 
-    assert b.reorder(order) == Bits("010110")
-    assert b.reorder(order).unreorder(order) == b
+    assert reorder_bits(b, order) == tuple(i == "1" for i in "010110")
+    assert unreorder_bits(reorder_bits(b, order), order) == b
