@@ -245,3 +245,18 @@ def test_bit_reorder():
 
     assert reorder_bits(b, order) == tuple(i == "1" for i in "010110")
     assert unreorder_bits(reorder_bits(b, order), order) == b
+
+
+def test_dyn_error():
+    class Foo(Bitfield):
+        a: int = bf_int(8)
+        b: int | str = bf_dyn(lambda x: bf_int(8) if x.a == 0 else bf_str(1))
+
+    Foo(a=0, b=1).to_bits()
+    Foo(a=1, b="a").to_bits()
+
+    with pytest.raises(ValueError):
+        Foo(a=1, b=1).to_bits()
+
+    with pytest.raises(ValueError):
+        Foo(a=0, b="a").to_bits()

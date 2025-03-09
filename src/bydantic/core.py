@@ -695,6 +695,8 @@ class Bitfield(t.Generic[_DynOptsT]):
                     f"error in field {name!r} of {self.__class__.__name__!r}: {e}"
                 ) from e
 
+            proxy[name] = value
+
         return stream.unreorder(self._reorder)
 
     @classmethod
@@ -714,7 +716,7 @@ class Bitfield(t.Generic[_DynOptsT]):
 
             case BFInt(n=n):
                 if not isinstance(value, int):
-                    raise TypeError(
+                    raise ValueError(
                         f"expected int, got {type(value).__name__}"
                     )
                 return stream.put_int(value, n)
@@ -729,6 +731,19 @@ class Bitfield(t.Generic[_DynOptsT]):
                 return stream
 
             case BFMap(inner=inner, vm=vm):
+                first_arg = next(iter(inspect.signature(vm.back).parameters))
+                expected_type = t.get_type_hints(
+                    vm.back
+                ).get(first_arg, NOT_PROVIDED)
+
+                # If the first arg of the mappers transform has a type hint,
+                # check that the value is of that type
+                if is_provided(expected_type) and isinstance(expected_type, t.Type):
+                    if not isinstance(value, expected_type):
+                        raise ValueError(
+                            f"expected {expected_type.__name__}, got {type(value).__name__}"
+                        )
+
                 return cls._write_bftype(stream, inner, vm.back(value), proxy, opts)
 
             case BFDynSelf(fn=fn):
