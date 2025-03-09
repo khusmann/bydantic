@@ -68,7 +68,33 @@ def bits_to_bytes(bits: t.Sequence[bool]) -> bytes:
     )
 
 
-class BitStream:
+class BitstreamWriter:
+    _bits: t.Tuple[bool, ...]
+
+    def __init__(self, bits: t.Sequence[bool] = ()) -> None:
+        self._bits = tuple(bits)
+
+    def put(self, bits: t.Sequence[bool]):
+        self._bits += tuple(bits)
+
+    def put_int(self, x: int, n: int):
+        self.put(int_to_bits(x, n))
+
+    def put_bytes(self, data: t.ByteString):
+        self.put(bytes_to_bits(data))
+
+    def __repr__(self) -> str:
+        str_bits = "".join(str(int(bit)) for bit in self._bits)
+        return f"{self.__class__.__name__}({str_bits})"
+
+    def as_bits(self) -> t.Tuple[bool, ...]:
+        return self._bits
+
+    def as_bytes(self) -> bytes:
+        return bits_to_bytes(self._bits)
+
+
+class BitstreamReader:
     _bits: t.Tuple[bool, ...]
     _pos: int
 
@@ -77,11 +103,11 @@ class BitStream:
         self._pos = pos
 
     @classmethod
-    def from_bits(cls, bits: t.Sequence[bool]) -> BitStream:
+    def from_bits(cls, bits: t.Sequence[bool]) -> BitstreamReader:
         return cls(bits)
 
     @classmethod
-    def from_bytes(cls, data: t.ByteString) -> BitStream:
+    def from_bytes(cls, data: t.ByteString) -> BitstreamReader:
         return cls(bytes_to_bits(data))
 
     def bits_remaining(self):
@@ -98,7 +124,7 @@ class BitStream:
         if n > self.bits_remaining():
             raise EOFError
 
-        return self._bits[self._pos:n+self._pos], BitStream(self._bits, self._pos+n)
+        return self._bits[self._pos:n+self._pos], BitstreamReader(self._bits, self._pos+n)
 
     def take_int(self, n: int):
         value, stream = self.take(n)

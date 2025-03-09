@@ -11,7 +11,7 @@ from .utils import (
     unreorder_bits,
     bits_to_bytes,
     int_to_bits,
-    BitStream,
+    BitstreamReader,
     AttrProxy,
     NOT_PROVIDED,
     NotProvided,
@@ -137,7 +137,7 @@ def bftype_has_children_with_default(bftype: BFType) -> bool:
             return is_provided(inner.default) or bftype_has_children_with_default(inner)
 
 
-def bftype_from_bitstream(bftype: BFType, stream: BitStream, proxy: AttrProxy, opts: t.Any) -> t.Tuple[t.Any, BitStream]:
+def bftype_from_bitstream(bftype: BFType, stream: BitstreamReader, proxy: AttrProxy, opts: t.Any) -> t.Tuple[t.Any, BitstreamReader]:
     match bftype:
         case BFBits(n=n):
             return stream.take(n)
@@ -629,13 +629,13 @@ class Bitfield(t.Generic[_DynOptsT]):
 
     @classmethod
     def from_bits(cls, bits: t.Sequence[bool], opts: _DynOptsT | None = None) -> t.Tuple[Self, t.Tuple[bool, ...]]:
-        out, stream = cls.from_bitstream(BitStream(bits), opts)
+        out, stream = cls._read_bitstream(BitstreamReader(bits), opts)
         return out, stream.as_bits()
 
     @classmethod
     def from_bytes(cls, data: t.ByteString, opts: _DynOptsT | None = None):
-        out, stream = cls.from_bitstream(
-            BitStream.from_bytes(data), opts
+        out, stream = cls._read_bitstream(
+            BitstreamReader.from_bytes(data), opts
         )
         return out, stream.as_bytes()
 
@@ -648,11 +648,11 @@ class Bitfield(t.Generic[_DynOptsT]):
     ) -> t.Tuple[t.List[Self], bytes]:
         out: t.List[Self] = []
 
-        stream = BitStream.from_bytes(data)
+        stream = BitstreamReader.from_bytes(data)
 
         while stream.bits_remaining():
             try:
-                item, stream = cls.from_bitstream(stream, opts)
+                item, stream = cls._read_bitstream(stream, opts)
                 out.append(item)
             except EOFError:
                 break
@@ -670,15 +670,16 @@ class Bitfield(t.Generic[_DynOptsT]):
         return out, stream.as_bytes()
 
     @classmethod
-    def from_bitstream(
+    def _read_bitstream(
         cls,
-        stream: BitStream,
+        stream: BitstreamReader,
         opts: _DynOptsT | None = None
     ):
         proxy: AttrProxy = AttrProxy({cls._DYN_OPTS_STR: opts})
 
-        stream = BitStream.from_bits(
-            reorder_bits(stream.as_bits(), cls._reorder))
+        stream = BitstreamReader.from_bits(
+            reorder_bits(stream.as_bits(), cls._reorder)
+        )
 
         for name, field in cls._fields.items():
             try:
