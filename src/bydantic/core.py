@@ -7,11 +7,8 @@ import inspect
 from enum import IntEnum, IntFlag, Enum
 
 from .utils import (
-    reorder_bits,
-    unreorder_bits,
-    bits_to_bytes,
-    int_to_bits,
     BitstreamReader,
+    BitstreamWriter,
     AttrProxy,
     NOT_PROVIDED,
     NotProvided,
@@ -135,110 +132,6 @@ def bftype_has_children_with_default(bftype: BFType) -> bool:
 
         case BFList(inner=inner) | BFMap(inner=inner) | BFLit(inner=inner):
             return is_provided(inner.default) or bftype_has_children_with_default(inner)
-
-
-def bftype_from_bitstream(bftype: BFType, stream: BitstreamReader, proxy: AttrProxy, opts: t.Any) -> t.Tuple[t.Any, BitstreamReader]:
-    match bftype:
-        case BFBits(n=n):
-            return stream.take(n)
-
-        case BFInt(n=n):
-            return stream.take_int(n)
-
-        case BFList(inner=inner, n=n):
-            acc: t.List[t.Any] = []
-            for _ in range(n):
-                item, stream = bftype_from_bitstream(
-                    inner, stream, proxy, opts
-                )
-                acc.append(item)
-            return acc, stream
-
-        case BFMap(inner=inner, vm=vm):
-            value, stream = bftype_from_bitstream(
-                inner, stream, proxy, opts
-            )
-            return vm.forward(value), stream
-
-        case BFDynSelf(fn=fn):
-            return bftype_from_bitstream(undisguise(fn(proxy)), stream, proxy, opts)
-
-        case BFDynSelfN(fn=fn):
-            return bftype_from_bitstream(undisguise(fn(proxy, stream.bits_remaining())), stream, proxy, opts)
-
-        case BFLit(inner=inner, default=default):
-            value, stream = bftype_from_bitstream(
-                inner, stream, proxy, opts
-            )
-            if value != default:
-                raise ValueError(f"expected {default!r}, got {value!r}")
-            return value, stream
-
-        case BFNone():
-            return None, stream
-
-        case BFBitfield(inner=inner, n=n):
-            bits, stream = stream.take(n)
-            return inner.from_bits_exact(bits, opts), stream
-
-
-def bftype_to_bits(bftype: BFType, value: t.Any, proxy: AttrProxy, opts: t.Any) -> t.Tuple[bool, ...]:
-    match bftype:
-        case BFBits(n=n):
-            if len(value) != n:
-                raise ValueError(f"expected {n} bits, got {len(value)}")
-            return value
-
-        case BFInt(n=n):
-            if not isinstance(value, int):
-                raise TypeError(
-                    f"expected int, got {type(value).__name__}"
-                )
-            return int_to_bits(value, n)
-
-        case BFList(inner=inner, n=n):
-            if len(value) != n:
-                raise ValueError(f"expected {n} items, got {len(value)}")
-            return sum([bftype_to_bits(inner, item, proxy, opts) for item in value], ())
-
-        case BFMap(inner=inner, vm=vm):
-            return bftype_to_bits(inner, vm.back(value), proxy, opts)
-
-        case BFDynSelf(fn=fn):
-            return bftype_to_bits(undisguise(fn(proxy)), value, proxy, opts)
-
-        case BFDynSelfN(fn=fn):
-            if is_bitfield(value):
-                return value.to_bits(opts)
-
-            if isinstance(value, (bool, bytes)) or value is None:
-                return bftype_to_bits(undisguise(value), value, proxy, opts)
-
-            raise TypeError(
-                f"dynamic fields that use discriminators with 'n bits remaining' "
-                f"can only be used with Bitfield, bool, bytes, or None values. "
-                f"{value!r} is not supported"
-            )
-
-        case BFLit(inner=inner, default=default):
-            if value != default:
-                raise ValueError(f"expected {default!r}, got {value!r}")
-            return bftype_to_bits(inner, value, proxy, opts)
-
-        case BFNone():
-            if value is not None:
-                raise ValueError(f"expected None, got {value!r}")
-            return ()
-
-        case BFBitfield(inner=inner, n=n):
-            if not is_bitfield(value):
-                raise TypeError(
-                    f"expected Bitfield, got {type(value).__name__}"
-                )
-            out = value.to_bits(opts)
-            if len(out) != n:
-                raise ValueError(f"expected {n} bits, got {len(out)}")
-            return out
 
 
 BFTypeDisguised = t.Annotated[_T, "BFTypeDisguised"]
@@ -629,12 +522,12 @@ class Bitfield(t.Generic[_DynOptsT]):
 
     @classmethod
     def from_bits(cls, bits: t.Sequence[bool], opts: _DynOptsT | None = None) -> t.Tuple[Self, t.Tuple[bool, ...]]:
-        out, stream = cls._read_bitstream(BitstreamReader(bits), opts)
+        out, stream = cls._read_stream(BitstreamReader(bits), opts)
         return out, stream.as_bits()
 
     @classmethod
     def from_bytes(cls, data: t.ByteString, opts: _DynOptsT | None = None):
-        out, stream = cls._read_bitstream(
+        out, stream = cls._read_stream(
             BitstreamReader.from_bytes(data), opts
         )
         return out, stream.as_bytes()
@@ -652,7 +545,7 @@ class Bitfield(t.Generic[_DynOptsT]):
 
         while stream.bits_remaining():
             try:
-                item, stream = cls._read_bitstream(stream, opts)
+                item, stream = cls._read_stream(stream, opts)
                 out.append(item)
             except EOFError:
                 break
@@ -669,52 +562,11 @@ class Bitfield(t.Generic[_DynOptsT]):
 
         return out, stream.as_bytes()
 
-    @classmethod
-    def _read_bitstream(
-        cls,
-        stream: BitstreamReader,
-        opts: _DynOptsT | None = None
-    ):
-        proxy: AttrProxy = AttrProxy({cls._DYN_OPTS_STR: opts})
-
-        stream = BitstreamReader.from_bits(
-            reorder_bits(stream.as_bits(), cls._reorder)
-        )
-
-        for name, field in cls._fields.items():
-            try:
-                value, stream = bftype_from_bitstream(
-                    field, stream, proxy, opts
-                )
-            except Exception as e:
-                # TODO assemble a nicer error message for deeply nested fields
-                raise type(e)(
-                    f"error in field {name!r} of {cls.__name__!r}: {e}"
-                ) from e
-
-            proxy[name] = value
-
-        return cls(**proxy), stream
-
     def to_bits(self, opts: _DynOptsT | None = None) -> t.Tuple[bool, ...]:
-        proxy = AttrProxy({**self.__dict__, self._DYN_OPTS_STR: opts})
-
-        acc: t.Tuple[bool, ...] = ()
-
-        for name, field in self._fields.items():
-            value = getattr(self, name)
-            try:
-                acc += bftype_to_bits(field, value, proxy, opts)
-            except Exception as e:
-                # TODO assemble a nicer error message for deeply nested fields
-                raise type(e)(
-                    f"error in field {name!r} of {self.__class__.__name__!r}: {e}"
-                ) from e
-
-        return unreorder_bits(acc, self._reorder)
+        return self._write_stream(BitstreamWriter(), opts).as_bits()
 
     def to_bytes(self, opts: _DynOptsT | None = None) -> bytes:
-        return bits_to_bytes(self.to_bits(opts))
+        return self._write_stream(BitstreamWriter(), opts).as_bytes()
 
     def __init_subclass__(cls):
         cls._fields = cls._fields.copy()
@@ -739,6 +591,182 @@ class Bitfield(t.Generic[_DynOptsT]):
                 ) from e
 
             cls._fields[name] = bf_field
+
+    @classmethod
+    def _read_stream(
+        cls,
+        stream: BitstreamReader,
+        opts: _DynOptsT | None = None
+    ):
+        proxy: AttrProxy = AttrProxy({cls._DYN_OPTS_STR: opts})
+
+        stream = stream.reorder(cls._reorder)
+
+        for name, field in cls._fields.items():
+            try:
+                value, stream = cls._read_bftype(
+                    stream, field, proxy, opts
+                )
+            except Exception as e:
+                # TODO assemble a nicer error message for deeply nested fields
+                raise type(e)(
+                    f"error in field {name!r} of {cls.__name__!r}: {e}"
+                ) from e
+
+            proxy[name] = value
+
+        return cls(**proxy), stream
+
+    @classmethod
+    def _read_bftype(
+        cls,
+        stream: BitstreamReader,
+        bftype: BFType,
+        proxy: AttrProxy,
+        opts: t.Any
+    ) -> t.Tuple[t.Any, BitstreamReader]:
+        match bftype:
+            case BFBits(n=n):
+                return stream.take(n)
+
+            case BFInt(n=n):
+                return stream.take_int(n)
+
+            case BFList(inner=inner, n=n):
+                acc: t.List[t.Any] = []
+                for _ in range(n):
+                    item, stream = cls._read_bftype(
+                        stream, inner, proxy, opts
+                    )
+                    acc.append(item)
+                return acc, stream
+
+            case BFMap(inner=inner, vm=vm):
+                value, stream = cls._read_bftype(
+                    stream, inner, proxy, opts
+                )
+                return vm.forward(value), stream
+
+            case BFDynSelf(fn=fn):
+                return cls._read_bftype(stream, undisguise(fn(proxy)), proxy, opts)
+
+            case BFDynSelfN(fn=fn):
+                return cls._read_bftype(stream, undisguise(fn(proxy, stream.bits_remaining())), proxy, opts)
+
+            case BFLit(inner=inner, default=default):
+                value, stream = cls._read_bftype(
+                    stream, inner, proxy, opts
+                )
+                if value != default:
+                    raise ValueError(f"expected {default!r}, got {value!r}")
+                return value, stream
+
+            case BFNone():
+                return None, stream
+
+            case BFBitfield(inner=inner, n=n):
+                substream, stream = stream.take_stream(n)
+
+                value, substream = inner._read_stream(substream, opts)
+
+                if substream.bits_remaining():
+                    raise ValueError(
+                        f"expected Bitfield of length {n}, got {n - substream.bits_remaining()}"
+                    )
+
+                return value, stream
+
+    def _write_stream(
+        self,
+        stream: BitstreamWriter,
+        opts: _DynOptsT | None = None
+    ) -> BitstreamWriter:
+        proxy = AttrProxy({**self.__dict__, self._DYN_OPTS_STR: opts})
+
+        for name, field in self._fields.items():
+            value = getattr(self, name)
+            try:
+                stream = self._write_bftype(
+                    stream, field, value, proxy, opts
+                )
+            except Exception as e:
+                # TODO assemble a nicer error message for deeply nested fields
+                raise type(e)(
+                    f"error in field {name!r} of {self.__class__.__name__!r}: {e}"
+                ) from e
+
+        return stream.unreorder(self._reorder)
+
+    @classmethod
+    def _write_bftype(
+        cls,
+        stream: BitstreamWriter,
+        bftype: BFType,
+        value: t.Any,
+        proxy: AttrProxy,
+        opts: t.Any
+    ) -> BitstreamWriter:
+        match bftype:
+            case BFBits(n=n):
+                if len(value) != n:
+                    raise ValueError(f"expected {n} bits, got {len(value)}")
+                return stream.put(value)
+
+            case BFInt(n=n):
+                if not isinstance(value, int):
+                    raise TypeError(
+                        f"expected int, got {type(value).__name__}"
+                    )
+                return stream.put_int(value, n)
+
+            case BFList(inner=inner, n=n):
+                if len(value) != n:
+                    raise ValueError(f"expected {n} items, got {len(value)}")
+                for item in value:
+                    stream = cls._write_bftype(
+                        stream, inner, item, proxy, opts
+                    )
+                return stream
+
+            case BFMap(inner=inner, vm=vm):
+                return cls._write_bftype(stream, inner, vm.back(value), proxy, opts)
+
+            case BFDynSelf(fn=fn):
+                return cls._write_bftype(stream, undisguise(fn(proxy)), value, proxy, opts)
+
+            case BFDynSelfN(fn=fn):
+                if is_bitfield(value):
+                    return value._write_stream(stream, opts)
+
+                if isinstance(value, (bool, bytes)) or value is None:
+                    return cls._write_bftype(stream, undisguise(value), value, proxy, opts)
+
+                raise TypeError(
+                    f"dynamic fields that use discriminators with 'n bits remaining' "
+                    f"can only be used with Bitfield, bool, bytes, or None values. "
+                    f"{value!r} is not supported"
+                )
+
+            case BFLit(inner=inner, default=default):
+                if value != default:
+                    raise ValueError(f"expected {default!r}, got {value!r}")
+                return cls._write_bftype(stream, inner, value, proxy, opts)
+
+            case BFNone():
+                if value is not None:
+                    raise ValueError(f"expected None, got {value!r}")
+                return stream
+
+            case BFBitfield(inner=inner, n=n):
+                if not is_bitfield(value):
+                    raise TypeError(
+                        f"expected Bitfield, got {type(value).__name__}"
+                    )
+                if value.length() is not None and value.length() != n:
+                    raise ValueError(
+                        f"expected Bitfield of length {n}, got {value.length()}"
+                    )
+                return value._write_stream(stream, opts)
 
 
 def _distill_field(type_hint: t.Any, value: t.Any) -> BFType:

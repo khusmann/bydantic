@@ -75,13 +75,13 @@ class BitstreamWriter:
         self._bits = tuple(bits)
 
     def put(self, bits: t.Sequence[bool]):
-        self._bits += tuple(bits)
+        return BitstreamWriter(self._bits + tuple(bits))
 
     def put_int(self, x: int, n: int):
-        self.put(int_to_bits(x, n))
+        return self.put(int_to_bits(x, n))
 
     def put_bytes(self, data: t.ByteString):
-        self.put(bytes_to_bits(data))
+        return self.put(bytes_to_bits(data))
 
     def __repr__(self) -> str:
         str_bits = "".join(str(int(bit)) for bit in self._bits)
@@ -92,6 +92,9 @@ class BitstreamWriter:
 
     def as_bytes(self) -> bytes:
         return bits_to_bytes(self._bits)
+
+    def unreorder(self, order: t.Sequence[int]) -> BitstreamWriter:
+        return BitstreamWriter(unreorder_bits(self._bits, order))
 
 
 class BitstreamReader:
@@ -134,6 +137,10 @@ class BitstreamReader:
         value, stream = self.take(n_bytes*8)
         return bits_to_bytes(value), stream
 
+    def take_stream(self, n: int):
+        bits, stream = self.take(n)
+        return BitstreamReader(bits), stream
+
     def __repr__(self) -> str:
         str_bits = "".join(str(int(bit)) for bit in self._bits[self._pos:])
         return f"{self.__class__.__name__}({str_bits})"
@@ -143,6 +150,9 @@ class BitstreamReader:
 
     def as_bytes(self) -> bytes:
         return self.take_bytes(self.bytes_remaining())[0]
+
+    def reorder(self, order: t.Sequence[int]) -> BitstreamReader:
+        return BitstreamReader(reorder_bits(self._bits, order))
 
 
 class AttrProxy(t.Mapping[str, t.Any]):
