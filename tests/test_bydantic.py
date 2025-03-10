@@ -24,7 +24,8 @@ from bydantic import (
     bf_int_enum,
     bf_bitfield,
     Scale,
-    DeserializeFieldError
+    DeserializeFieldError,
+    SerializeFieldError,
 )
 
 
@@ -48,7 +49,7 @@ def test_str_field():
     assert work.to_bytes() == b'hello\x00\x00\x00'
     assert Work.from_bytes_exact(work.to_bytes()) == work
 
-    with pytest.raises(ValueError):
+    with pytest.raises(SerializeFieldError):
         Work(a="123456789").to_bytes()
 
 
@@ -275,8 +276,8 @@ def test_dyn_error():
     Foo(a=0, b=1).to_bits()
     Foo(a=1, b="a").to_bits()
 
-    with pytest.raises(ValueError, match=re.escape("error in field 'b' of 'Foo': expected str, got int")):
+    with pytest.raises(SerializeFieldError, match=re.escape("ValueError in field 'Foo.b': expected str, got int")):
         Foo(a=1, b=1).to_bits()
 
-    with pytest.raises(ValueError, match=re.escape("error in field 'b' of 'Foo': expected int, got str")):
+    with pytest.raises(SerializeFieldError, match=re.escape("ValueError in field 'Foo.b': expected int, got str")):
         Foo(a=0, b="a").to_bits()

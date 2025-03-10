@@ -463,10 +463,6 @@ class SerializeFieldError(FieldError):
     pass
 
 
-class FieldDeclarationError(FieldError):
-    pass
-
-
 @dataclass_transform(
     kw_only_default=True,
     field_specifiers=(
@@ -725,10 +721,12 @@ class Bitfield(t.Generic[_DynOptsT]):
                 stream = self._write_bftype(
                     stream, field, value, proxy, opts
                 )
+            except SerializeFieldError as e:
+                e.push_stack(self.__class__.__name__, name)
+                raise
             except Exception as e:
-                # TODO assemble a nicer error message for deeply nested fields
-                raise type(e)(
-                    f"error in field {name!r} of {self.__class__.__name__!r}: {e}"
+                raise SerializeFieldError(
+                    e, self.__class__.__name__, name
                 ) from e
 
         return stream.unreorder(self._reorder)

@@ -16,6 +16,7 @@ from .core import (
     ValueMapper,
     IntScale,
     DeserializeFieldError,
+    SerializeFieldError,
 )
 
 __all__ = [
@@ -36,4 +37,5 @@ __all__ = [
     "ValueMapper",
     "IntScale",
     "DeserializeFieldError",
+    "SerializeFieldError",
 ]
