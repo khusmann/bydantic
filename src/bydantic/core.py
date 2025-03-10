@@ -15,6 +15,33 @@ from .utils import (
     is_provided,
 )
 
+
+class FieldError(Exception):
+    inner: Exception
+    class_name: str
+    field_stack: t.Tuple[str, ...]
+
+    def __init__(self, e: Exception, class_name: str, field_name: str):
+        self.inner = e
+        self.class_name = class_name
+        self.field_stack = (field_name,)
+
+    def push_stack(self, class_name: str, field_name: str):
+        self.class_name = class_name
+        self.field_stack = (field_name,) + self.field_stack
+
+    def __str__(self) -> str:
+        return f"{self.inner.__class__.__name__} in field '{self.class_name}.{'.'.join(self.field_stack)}': {str(self.inner)}"
+
+
+class DeserializeFieldError(FieldError):
+    pass
+
+
+class SerializeFieldError(FieldError):
+    pass
+
+
 _T = t.TypeVar("_T")
 _P = t.TypeVar("_P")
 
@@ -415,52 +442,26 @@ def bf_none(*, default: None | NotProvided = NOT_PROVIDED) -> BFTypeDisguised[No
 
 @t.overload
 def bf_bitfield(
-    cls: t.Type[_BitfieldT], n: int, *,
-    default: _BitfieldT
-) -> BFTypeDisguised[_BitfieldT]: ...
+    cls: t.Type[BitfieldT], n: int, *,
+    default: BitfieldT
+) -> BFTypeDisguised[BitfieldT]: ...
 
 
 @t.overload
 def bf_bitfield(
-    cls: t.Type[_BitfieldT], n: int
-) -> BFTypeDisguised[_BitfieldT]: ...
+    cls: t.Type[BitfieldT], n: int
+) -> BFTypeDisguised[BitfieldT]: ...
 
 
 def bf_bitfield(
-    cls: t.Type[_BitfieldT],
+    cls: t.Type[BitfieldT],
     n: int, *,
-    default: _BitfieldT | NotProvided = NOT_PROVIDED
-) -> BFTypeDisguised[_BitfieldT]:
+    default: BitfieldT | NotProvided = NOT_PROVIDED
+) -> BFTypeDisguised[BitfieldT]:
     return disguise(BFBitfield(cls, n, default=default))
 
 
-_DynOptsT = TypeVarDefault("_DynOptsT", default=None)
-
-
-class FieldError(Exception):
-    inner: Exception
-    class_name: str
-    field_stack: t.Tuple[str, ...]
-
-    def __init__(self, e: Exception, class_name: str, field_name: str):
-        self.inner = e
-        self.class_name = class_name
-        self.field_stack = (field_name,)
-
-    def push_stack(self, class_name: str, field_name: str):
-        self.class_name = class_name
-        self.field_stack = (field_name,) + self.field_stack
-
-    def __str__(self) -> str:
-        return f"{self.inner.__class__.__name__} in field '{self.class_name}.{'.'.join(self.field_stack)}': {str(self.inner)}"
-
-
-class DeserializeFieldError(FieldError):
-    pass
-
-
-class SerializeFieldError(FieldError):
-    pass
+DynOptsT = TypeVarDefault("DynOptsT", default=None)
 
 
 @dataclass_transform(
@@ -480,11 +481,11 @@ class SerializeFieldError(FieldError):
         bf_dyn,
     )
 )
-class Bitfield(t.Generic[_DynOptsT]):
+class Bitfield(t.Generic[DynOptsT]):
     _fields: t.ClassVar[t.Dict[str, BFType]] = {}
     _reorder: t.ClassVar[t.Sequence[int]] = []
     _DYN_OPTS_STR: t.ClassVar[str] = "dyn_opts"
-    dyn_opts: _DynOptsT | None = None
+    dyn_opts: DynOptsT | None = None
 
     def __init__(self, **kwargs: t.Any):
         for name, field in self._fields.items():
@@ -527,7 +528,7 @@ class Bitfield(t.Generic[_DynOptsT]):
         return acc
 
     @classmethod
-    def from_bits_exact(cls, bits: t.Sequence[bool], opts: _DynOptsT | None = None):
+    def from_bits_exact(cls, bits: t.Sequence[bool], opts: DynOptsT | None = None):
         out, remaining = cls.from_bits(bits, opts)
 
         if remaining:
@@ -538,7 +539,7 @@ class Bitfield(t.Generic[_DynOptsT]):
         return out
 
     @classmethod
-    def from_bytes_exact(cls, data: t.ByteString, opts: _DynOptsT | None = None):
+    def from_bytes_exact(cls, data: t.ByteString, opts: DynOptsT | None = None):
         out, remaining = cls.from_bytes(data, opts)
 
         if remaining:
@@ -549,14 +550,14 @@ class Bitfield(t.Generic[_DynOptsT]):
         return out
 
     @classmethod
-    def from_bits(cls, bits: t.Sequence[bool], opts: _DynOptsT | None = None) -> t.Tuple[Self, t.Tuple[bool, ...]]:
+    def from_bits(cls, bits: t.Sequence[bool], opts: DynOptsT | None = None) -> t.Tuple[Self, t.Tuple[bool, ...]]:
         out, stream = cls._read_stream(
             BitstreamReader.from_bits(bits), opts
         )
         return out, stream.as_bits()
 
     @classmethod
-    def from_bytes(cls, data: t.ByteString, opts: _DynOptsT | None = None):
+    def from_bytes(cls, data: t.ByteString, opts: DynOptsT | None = None):
         out, stream = cls._read_stream(
             BitstreamReader.from_bytes(data), opts
         )
@@ -566,7 +567,7 @@ class Bitfield(t.Generic[_DynOptsT]):
     def from_bytes_batch(
         cls,
         data: t.ByteString,
-        opts: _DynOptsT | None = None,
+        opts: DynOptsT | None = None,
         consume_errors: bool = False
     ) -> t.Tuple[t.List[Self], bytes]:
         out: t.List[Self] = []
@@ -593,10 +594,10 @@ class Bitfield(t.Generic[_DynOptsT]):
 
         return out, stream.as_bytes()
 
-    def to_bits(self, opts: _DynOptsT | None = None) -> t.Tuple[bool, ...]:
+    def to_bits(self, opts: DynOptsT | None = None) -> t.Tuple[bool, ...]:
         return self._write_stream(BitstreamWriter(), opts).as_bits()
 
-    def to_bytes(self, opts: _DynOptsT | None = None) -> bytes:
+    def to_bytes(self, opts: DynOptsT | None = None) -> bytes:
         return self._write_stream(BitstreamWriter(), opts).as_bytes()
 
     def __init_subclass__(cls):
@@ -630,7 +631,7 @@ class Bitfield(t.Generic[_DynOptsT]):
     def _read_stream(
         cls,
         stream: BitstreamReader,
-        opts: _DynOptsT | None,
+        opts: DynOptsT | None,
     ):
         proxy: AttrProxy = AttrProxy({cls._DYN_OPTS_STR: opts})
 
@@ -715,7 +716,7 @@ class Bitfield(t.Generic[_DynOptsT]):
     def _write_stream(
         self,
         stream: BitstreamWriter,
-        opts: _DynOptsT | None,
+        opts: DynOptsT | None,
     ) -> BitstreamWriter:
         proxy = AttrProxy({**self.__dict__, self._DYN_OPTS_STR: opts})
 
@@ -840,7 +841,7 @@ def _distill_field(type_hint: t.Any, value: t.Any) -> BFType:
     return undisguise(value)
 
 
-_BitfieldT = t.TypeVar("_BitfieldT", bound=Bitfield)
+BitfieldT = t.TypeVar("BitfieldT", bound=Bitfield)
 
 
 def is_bitfield(x: t.Any) -> t.TypeGuard[Bitfield[t.Any]]:
