@@ -126,18 +126,16 @@ def test_classvars():
     assert Work.from_bytes_exact(work.to_bytes()) == work
 
 
-class BarEnum(IntEnum):
-    A = 1
-    B = 2
-    C = 3
-
-
-class Baz(Bitfield):
-    a: int = bf_int(3)
-    b: int = bf_int(10)
-
-
 def test_kitchen_sink():
+    class BarEnum(IntEnum):
+        A = 1
+        B = 2
+        C = 3
+
+    class Baz(Bitfield):
+        a: int = bf_int(3)
+        b: int = bf_int(10)
+
     def foo(x: Foo) -> t.Literal[10] | list[float]:
         if x.ab == 1:
             return bf_list(bf_map(bf_int(5), Scale(100)), 1)
@@ -218,11 +216,10 @@ def test_incorrect_field_types():
         print(Fail2)
 
 
-class DynFoo(Bitfield):
-    a: int = bf_dyn(lambda _, __: bf_int(4))
-
-
 def test_dyn_infer_err():
+    class DynFoo(Bitfield):
+        a: int = bf_dyn(lambda _, __: bf_int(4))
+
     with pytest.raises(TypeError, match=re.escape("in definition of 'Fail.a': cannot infer length for dynamic Bitfield")):
         class Fail(Bitfield):
             a: DynFoo
@@ -251,13 +248,12 @@ def test_bit_reorder():
     assert unreorder_bits(reorder_bits(b, order), order) == b
 
 
-class InnerFoo(Bitfield):
-    a: t.Literal[1] = bf_lit_int(4, default=1)
-    b: int = bf_int(4)
-    c: int = bf_int(8)
-
-
 def test_nested_deserialize_error():
+    class InnerFoo(Bitfield):
+        a: t.Literal[1] = bf_lit_int(4, default=1)
+        b: int = bf_int(4)
+        c: int = bf_int(8)
+
     class Bar(Bitfield):
         z: InnerFoo = bf_bitfield(InnerFoo, 8)
 

@@ -602,7 +602,11 @@ class Bitfield(t.Generic[_DynOptsT]):
     def __init_subclass__(cls):
         cls._fields = cls._fields.copy()
 
-        for name, type_hint in t.get_type_hints(cls).items():
+        curr_frame = inspect.currentframe()
+        parent_frame = curr_frame.f_back if curr_frame else None
+        parent_locals = parent_frame.f_locals if parent_frame else None
+
+        for name, type_hint in t.get_type_hints(cls, localns=parent_locals).items():
             if t.get_origin(type_hint) is t.ClassVar or name == cls._DYN_OPTS_STR:
                 continue
 
