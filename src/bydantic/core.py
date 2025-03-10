@@ -297,12 +297,14 @@ def bf_list(
 
 _LiteralT = t.TypeVar("_LiteralT", bound=str | int | float | bytes | Enum)
 
+_IntLiteralT = t.TypeVar("_IntLiteralT", bound=int)
+
 
 def bf_lit(field: BFTypeDisguised[_LiteralT], *, default: _P) -> BFTypeDisguised[_P]:
     return disguise(BFLit(undisguise(field), default))
 
 
-def bf_lit_int(n: int, *, default: int) -> BFTypeDisguised[int]:
+def bf_lit_int(n: int, *, default: _IntLiteralT) -> BFTypeDisguised[_IntLiteralT]:
     return bf_lit(bf_int(n), default=default)
 
 
@@ -435,6 +437,36 @@ def bf_bitfield(
 _DynOptsT = TypeVarDefault("_DynOptsT", default=None)
 
 
+class FieldError(Exception):
+    inner: Exception
+    class_name: str
+    field_stack: t.Tuple[str, ...]
+
+    def __init__(self, e: Exception, class_name: str, field_name: str):
+        self.inner = e
+        self.class_name = class_name
+        self.field_stack = (field_name,)
+
+    def push_stack(self, class_name: str, field_name: str):
+        self.class_name = class_name
+        self.field_stack = (field_name,) + self.field_stack
+
+    def __str__(self) -> str:
+        return f"{self.inner.__class__.__name__} in field '{self.class_name}.{'.'.join(self.field_stack)}': {str(self.inner)}"
+
+
+class DeserializeFieldError(FieldError):
+    pass
+
+
+class SerializeFieldError(FieldError):
+    pass
+
+
+class FieldDeclarationError(FieldError):
+    pass
+
+
 @dataclass_transform(
     kw_only_default=True,
     field_specifiers=(
@@ -522,7 +554,9 @@ class Bitfield(t.Generic[_DynOptsT]):
 
     @classmethod
     def from_bits(cls, bits: t.Sequence[bool], opts: _DynOptsT | None = None) -> t.Tuple[Self, t.Tuple[bool, ...]]:
-        out, stream = cls._read_stream(BitstreamReader(bits), opts)
+        out, stream = cls._read_stream(
+            BitstreamReader.from_bits(bits), opts
+        )
         return out, stream.as_bits()
 
     @classmethod
@@ -547,9 +581,10 @@ class Bitfield(t.Generic[_DynOptsT]):
             try:
                 item, stream = cls._read_stream(stream, opts)
                 out.append(item)
-            except EOFError:
-                break
-            except Exception:
+            except DeserializeFieldError as e:
+                if isinstance(e.inner, EOFError):
+                    break
+
                 if consume_errors:
                     _, stream = stream.take_bytes(1)
                 else:
@@ -596,7 +631,7 @@ class Bitfield(t.Generic[_DynOptsT]):
     def _read_stream(
         cls,
         stream: BitstreamReader,
-        opts: _DynOptsT | None = None
+        opts: _DynOptsT | None,
     ):
         proxy: AttrProxy = AttrProxy({cls._DYN_OPTS_STR: opts})
 
@@ -607,11 +642,11 @@ class Bitfield(t.Generic[_DynOptsT]):
                 value, stream = cls._read_bftype(
                     stream, field, proxy, opts
                 )
+            except DeserializeFieldError as e:
+                e.push_stack(cls.__name__, name)
+                raise
             except Exception as e:
-                # TODO assemble a nicer error message for deeply nested fields
-                raise type(e)(
-                    f"error in field {name!r} of {cls.__name__!r}: {e}"
-                ) from e
+                raise DeserializeFieldError(e, cls.__name__, name) from e
 
             proxy[name] = value
 
@@ -658,7 +693,9 @@ class Bitfield(t.Generic[_DynOptsT]):
                     stream, inner, proxy, opts
                 )
                 if value != default:
-                    raise ValueError(f"expected {default!r}, got {value!r}")
+                    raise ValueError(
+                        f"expected literal {default!r}, got {value!r}"
+                    )
                 return value, stream
 
             case BFNone():
@@ -679,7 +716,7 @@ class Bitfield(t.Generic[_DynOptsT]):
     def _write_stream(
         self,
         stream: BitstreamWriter,
-        opts: _DynOptsT | None = None
+        opts: _DynOptsT | None,
     ) -> BitstreamWriter:
         proxy = AttrProxy({**self.__dict__, self._DYN_OPTS_STR: opts})
 

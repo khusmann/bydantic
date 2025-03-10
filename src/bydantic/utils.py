@@ -125,7 +125,7 @@ class BitstreamReader:
 
     def take(self, n: int):
         if n > self.bits_remaining():
-            raise EOFError
+            raise EOFError("Unexpected end of bitstream")
 
         return self._bits[self._pos:n+self._pos], BitstreamReader(self._bits, self._pos+n)
 

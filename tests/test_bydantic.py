@@ -20,8 +20,11 @@ from bydantic import (
     bf_dyn,
     bf_map,
     bf_lit,
+    bf_lit_int,
     bf_int_enum,
-    Scale
+    bf_bitfield,
+    Scale,
+    DeserializeFieldError
 )
 
 
@@ -245,6 +248,23 @@ def test_bit_reorder():
 
     assert reorder_bits(b, order) == tuple(i == "1" for i in "010110")
     assert unreorder_bits(reorder_bits(b, order), order) == b
+
+
+class InnerFoo(Bitfield):
+    a: t.Literal[1] = bf_lit_int(4, default=1)
+    b: int = bf_int(4)
+    c: int = bf_int(8)
+
+
+def test_nested_deserialize_error():
+    class Bar(Bitfield):
+        z: InnerFoo = bf_bitfield(InnerFoo, 8)
+
+    with pytest.raises(DeserializeFieldError, match=re.escape("ValueError in field 'Bar.z.a': expected literal 1, got 0")):
+        Bar.from_bytes_exact(b'\x00')
+
+    with pytest.raises(DeserializeFieldError, match=re.escape("EOFError in field 'Bar.z.c': Unexpected end of bitstream")):
+        Bar.from_bytes_exact(b'\x10')
 
 
 def test_dyn_error():
