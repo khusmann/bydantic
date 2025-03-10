@@ -557,7 +557,7 @@ class Bitfield(t.Generic[DynOptsT]):
         return out, stream.as_bits()
 
     @classmethod
-    def from_bytes(cls, data: t.ByteString, opts: DynOptsT | None = None):
+    def from_bytes(cls, data: t.ByteString, opts: DynOptsT | None = None) -> t.Tuple[Self, bytes]:
         out, stream = cls._read_stream(
             BitstreamReader.from_bytes(data), opts
         )
