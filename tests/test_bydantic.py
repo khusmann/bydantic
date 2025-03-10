@@ -206,12 +206,12 @@ def test_default_len_err():
 
 
 def test_incorrect_field_types():
-    with pytest.raises(TypeError, match=re.escape("error in field 'a' of 'Fail1': expected a field type, got 1")):
+    with pytest.raises(TypeError, match=re.escape("in definition of 'Fail1.a': expected a field type, got 1")):
         class Fail1(Bitfield):
             a: int = 1
         print(Fail1)
 
-    with pytest.raises(TypeError, match=re.escape("error in field 'a' of 'Fail2': missing field definition")):
+    with pytest.raises(TypeError, match=re.escape("in definition of 'Fail2.a': missing field definition")):
         class Fail2(Bitfield):
             a: int
         print(Fail2)
@@ -222,21 +222,21 @@ class DynFoo(Bitfield):
 
 
 def test_dyn_infer_err():
-    with pytest.raises(TypeError, match=re.escape("error in field 'a' of 'Fail': cannot infer length for dynamic Bitfield")):
+    with pytest.raises(TypeError, match=re.escape("in definition of 'Fail.a': cannot infer length for dynamic Bitfield")):
         class Fail(Bitfield):
             a: DynFoo
         print(Fail)
 
 
 def test_lit_field_err():
-    with pytest.raises(TypeError, match=re.escape("error in field 'a' of 'Fail': literal must have exactly one argument")):
+    with pytest.raises(TypeError, match=re.escape("in definition of 'Fail.a': literal must have exactly one argument")):
         class Fail(Bitfield):
             a: t.Literal[1, 2]
         print(Fail)
 
 
 def test_default_children_err():
-    with pytest.raises(ValueError, match=re.escape("error in field 'a' of 'Fail': inner field definitions cannot have defaults set (except literal fields)")):
+    with pytest.raises(ValueError, match=re.escape("in definition of 'Fail.a': inner field definitions cannot have defaults set (except literal fields)")):
         class Fail(Bitfield):
             a: t.List[int] = bf_list(bf_int(4, default=10), 4)
         print(Fail)

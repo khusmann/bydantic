@@ -620,9 +620,8 @@ class Bitfield(t.Generic[_DynOptsT]):
                         f"inner field definitions cannot have defaults set (except literal fields)"
                     )
             except Exception as e:
-                # TODO assemble a nicer error message for deeply nested fields
                 raise type(e)(
-                    f"error in field {name!r} of {cls.__name__!r}: {e}"
+                    f"in definition of '{cls.__name__}.{name}': {str(e)}"
                 ) from e
 
             cls._fields[name] = bf_field
