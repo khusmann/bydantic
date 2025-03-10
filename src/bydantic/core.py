@@ -748,7 +748,7 @@ class Bitfield(t.Generic[_DynOptsT]):
 
             case BFInt(n=n):
                 if not isinstance(value, int):
-                    raise ValueError(
+                    raise TypeError(
                         f"expected int, got {type(value).__name__}"
                     )
                 return stream.put_int(value, n)
@@ -772,7 +772,7 @@ class Bitfield(t.Generic[_DynOptsT]):
                 # check that the value is of that type
                 if is_provided(expected_type) and isinstance(expected_type, t.Type):
                     if not isinstance(value, expected_type):
-                        raise ValueError(
+                        raise TypeError(
                             f"expected {expected_type.__name__}, got {type(value).__name__}"
                         )
 

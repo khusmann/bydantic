@@ -276,8 +276,8 @@ def test_dyn_error():
     Foo(a=0, b=1).to_bits()
     Foo(a=1, b="a").to_bits()
 
-    with pytest.raises(SerializeFieldError, match=re.escape("ValueError in field 'Foo.b': expected str, got int")):
+    with pytest.raises(SerializeFieldError, match=re.escape("TypeError in field 'Foo.b': expected str, got int")):
         Foo(a=1, b=1).to_bits()
 
-    with pytest.raises(SerializeFieldError, match=re.escape("ValueError in field 'Foo.b': expected int, got str")):
+    with pytest.raises(SerializeFieldError, match=re.escape("TypeError in field 'Foo.b': expected int, got str")):
         Foo(a=0, b="a").to_bits()
