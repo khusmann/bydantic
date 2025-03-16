@@ -8,8 +8,8 @@ type hints, which then can be automatically serialized and deserialized to and
 from raw bytes.
 
 The name bydantic is a portmanteau of "bit" and "pydantic" -- you can think of
-bydantic as a [pydantic](https://docs.pydantic.dev) for serializing /
-deserializing bitfields instead of validating raw objects.
+bydantic as a [pydantic-like](https://docs.pydantic.dev) library for serializing
+/ deserializing bitfields instead of validating raw objects.
 
 ## Installation
 
@@ -97,4 +97,5 @@ This just scratches the surface of what bydantic can do... continue reading
 - Field type combinators (e.g. `bf_list`, `bf_dyn`, `bf_map`, etc.)
 - Serialization / deserialization context
 - Bitfield reordering / alignment
-- Clear error messages when fields fail to serialize / deserialize
+- Clear error messages when fields fail to serialize / deserialize, even when
+  fields are deeply nested
