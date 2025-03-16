@@ -13,6 +13,7 @@ from bydantic.utils import (
 
 from bydantic import (
     Bitfield,
+    BitfieldConfig,
     bf_str,
     bf_bytes,
     bf_list,
@@ -107,7 +108,9 @@ def test_basic_reorder():
         c: str = bf_str(3)
         d: bytes = bf_bytes(4)
 
-        _reorder = [*range(56, 56+16)]
+        bitfield_config = BitfieldConfig(
+            reorder_bits=[*range(56, 56+16)]
+        )
 
     work = Work(a=1, b=[1, 2, 3, 4], c="abc", d=b"abcd")
     assert work.to_bytes() == b'abcabcd\x12\x9c'

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from dataclasses import dataclass, field as dataclass_field
+
 from typing_extensions import dataclass_transform, TypeVar as TypeVarDefault, Self
 import typing as t
 import inspect
@@ -464,6 +466,11 @@ def bf_bitfield(
 DynOptsT = TypeVarDefault("DynOptsT", default=None)
 
 
+@dataclass()
+class BitfieldConfig:
+    reorder_bits: t.Sequence[int] = dataclass_field(default_factory=list)
+
+
 @dataclass_transform(
     kw_only_default=True,
     field_specifiers=(
@@ -485,7 +492,7 @@ class Bitfield(t.Generic[DynOptsT]):
     __bydantic_fields__: t.ClassVar[t.Dict[str, BFType]] = {}
     __BYDANTIC_DYN_OPTS_STR__: t.ClassVar[str] = "dyn_opts"
     dyn_opts: DynOptsT | None = None
-    _reorder: t.ClassVar[t.Sequence[int]] = []
+    bitfield_config: t.ClassVar[BitfieldConfig] = BitfieldConfig()
 
     def __init__(self, **kwargs: t.Any):
         for name, field in self.__bydantic_fields__.items():
@@ -635,7 +642,7 @@ class Bitfield(t.Generic[DynOptsT]):
     ):
         proxy: AttrProxy = AttrProxy({cls.__BYDANTIC_DYN_OPTS_STR__: opts})
 
-        stream = stream.reorder(cls._reorder)
+        stream = stream.reorder(cls.bitfield_config.reorder_bits)
 
         for name, field in cls.__bydantic_fields__.items():
             try:
@@ -674,7 +681,7 @@ class Bitfield(t.Generic[DynOptsT]):
                     e, self.__class__.__name__, name
                 ) from e
 
-        return stream.unreorder(self._reorder)
+        return stream.unreorder(self.bitfield_config.reorder_bits)
 
 
 def _read_bftype(
