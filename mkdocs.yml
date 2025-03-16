@@ -14,3 +14,8 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - pymdownx.snippets
   - pymdownx.superfences
+
+plugins:
+  - gen-files:
+      scripts:
+        - update_readme.py
