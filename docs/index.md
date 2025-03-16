@@ -14,7 +14,7 @@ type hints, which then can be automatically serialized and deserialized to and
 from raw bytes.
 
 The name bydantic is a portmanteau of "bit" and "pydantic" -- you can think of
-bydantic as a [pydantic-like](https://docs.pydantic.dev) library for serializing
+bydantic as a [pydantic](https://docs.pydantic.dev)-like library for serializing
 / deserializing bitfields instead of validating raw objects.
 
 ## Installation
