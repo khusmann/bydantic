@@ -628,6 +628,9 @@ class Bitfield(t.Generic[ContextT]):
                         f"inner field definitions cannot have defaults set (except literal fields)"
                     )
             except Exception as e:
+                # Don't need to create an exception stack here (as we do for field errors)
+                # because child bitfields must be defined first, so any errors will not
+                # be nested
                 raise type(e)(
                     f"in definition of '{cls.__name__}.{name}': {str(e)}"
                 ) from e
