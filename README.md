@@ -1,19 +1,19 @@
-# Bydantic
+# bydantic
 
 [![Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
 
-Bydantic is a Python library for serializing and deserializing bitfields.
-Bydantic allows you to declaratively define bitfields as Python classes with
+`bydantic` is a Python library for serializing and deserializing bitfields.
+bydantic allows you to declaratively define bitfields as Python classes with
 type hints, which then can be automatically serialized and deserialized to and
 from raw bytes.
 
-The name Bydantic is a portmanteau of "bit" and "Pydantic" -- you can think of
-Bydantic as a [Pydantic](https://docs.pydantic.dev) for serializing /
+The name bydantic is a portmanteau of "bit" and "pydantic" -- you can think of
+bydantic as a [pydantic](https://docs.pydantic.dev) for serializing /
 deserializing bitfields instead of validating raw objects.
 
 ## Installation
 
-Bydantic is available on PyPI and can be installed using `pip`:
+bydantic is available on PyPI and can be installed using `pip`:
 
 ```bash
 pip install bydantic
@@ -21,7 +21,7 @@ pip install bydantic
 
 ## Quick Start
 
-Here's a simple example of Bydantic can be used:
+Here's a simple example of bydantic can be used:
 
 ```python
 from bydantic import (
@@ -51,7 +51,7 @@ foo2 = Foo.from_bytes_exact(b'\x34y')
 print(foo2) # Foo(a=3, b=4, c='y')
 ```
 
-The power of Bydantic, however, is that field types can be composed into complex
+The power of bydantic, however, is that field types can be composed into complex
 data structures. For example:
 
 ```python
@@ -88,7 +88,7 @@ bar2 = Bar.from_bytes_exact(b'\x01x#y*')
 print(bar2) # Bar(d=[Foo(a=0, b=1, c='x'), Foo(a=2, b=3, c='y')], e=42)
 ```
 
-This just scratches the surface of what Bydantic can do... continue reading
+This just scratches the surface of what bydantic can do... continue reading
 [the docs](basic_field_types.md) for more info.
 
 ## Features
