@@ -482,13 +482,13 @@ DynOptsT = TypeVarDefault("DynOptsT", default=None)
     )
 )
 class Bitfield(t.Generic[DynOptsT]):
-    _fields: t.ClassVar[t.Dict[str, BFType]] = {}
-    _reorder: t.ClassVar[t.Sequence[int]] = []
-    _DYN_OPTS_STR: t.ClassVar[str] = "dyn_opts"
+    __bydantic_fields__: t.ClassVar[t.Dict[str, BFType]] = {}
+    __BYDANTIC_DYN_OPTS_STR__: t.ClassVar[str] = "dyn_opts"
     dyn_opts: DynOptsT | None = None
+    _reorder: t.ClassVar[t.Sequence[int]] = []
 
     def __init__(self, **kwargs: t.Any):
-        for name, field in self._fields.items():
+        for name, field in self.__bydantic_fields__.items():
             value = kwargs.get(name, NOT_PROVIDED)
 
             if not is_provided(value):
@@ -504,7 +504,7 @@ class Bitfield(t.Generic[DynOptsT]):
             self.__class__.__name__,
             "(",
             ', '.join(
-                f'{name}={getattr(self, name)!r}' for name in self._fields
+                f'{name}={getattr(self, name)!r}' for name in self.__bydantic_fields__
             ),
             ")",
         ))
@@ -514,13 +514,13 @@ class Bitfield(t.Generic[DynOptsT]):
             return False
 
         return all((
-            getattr(self, name) == getattr(other, name) for name in self._fields
+            getattr(self, name) == getattr(other, name) for name in self.__bydantic_fields__
         ))
 
     @classmethod
     def length(cls) -> int | None:
         acc = 0
-        for field in cls._fields.values():
+        for field in cls.__bydantic_fields__.values():
             field_len = bftype_length(field)
             if field_len is None:
                 return None
@@ -551,14 +551,14 @@ class Bitfield(t.Generic[DynOptsT]):
 
     @classmethod
     def from_bits(cls, bits: t.Sequence[bool], opts: DynOptsT | None = None) -> t.Tuple[Self, t.Tuple[bool, ...]]:
-        out, stream = cls._read_stream(
+        out, stream = cls.__bydantic_read_stream__(
             BitstreamReader.from_bits(bits), opts
         )
         return out, stream.as_bits()
 
     @classmethod
     def from_bytes(cls, data: t.ByteString, opts: DynOptsT | None = None) -> t.Tuple[Self, bytes]:
-        out, stream = cls._read_stream(
+        out, stream = cls.__bydantic_read_stream__(
             BitstreamReader.from_bytes(data), opts
         )
         return out, stream.as_bytes()
@@ -576,7 +576,7 @@ class Bitfield(t.Generic[DynOptsT]):
 
         while stream.bits_remaining():
             try:
-                item, stream = cls._read_stream(stream, opts)
+                item, stream = cls.__bydantic_read_stream__(stream, opts)
                 out.append(item)
             except DeserializeFieldError as e:
                 if isinstance(e.inner, EOFError):
@@ -595,20 +595,20 @@ class Bitfield(t.Generic[DynOptsT]):
         return out, stream.as_bytes()
 
     def to_bits(self, opts: DynOptsT | None = None) -> t.Tuple[bool, ...]:
-        return self._write_stream(BitstreamWriter(), opts).as_bits()
+        return self.__bydantic_write_stream__(BitstreamWriter(), opts).as_bits()
 
     def to_bytes(self, opts: DynOptsT | None = None) -> bytes:
-        return self._write_stream(BitstreamWriter(), opts).as_bytes()
+        return self.__bydantic_write_stream__(BitstreamWriter(), opts).as_bytes()
 
     def __init_subclass__(cls):
-        cls._fields = cls._fields.copy()
+        cls.__bydantic_fields__ = cls.__bydantic_fields__.copy()
 
         curr_frame = inspect.currentframe()
         parent_frame = curr_frame.f_back if curr_frame else None
         parent_locals = parent_frame.f_locals if parent_frame else None
 
         for name, type_hint in t.get_type_hints(cls, localns=parent_locals).items():
-            if t.get_origin(type_hint) is t.ClassVar or name == cls._DYN_OPTS_STR:
+            if t.get_origin(type_hint) is t.ClassVar or name == cls.__BYDANTIC_DYN_OPTS_STR__:
                 continue
 
             value = getattr(cls, name) if hasattr(cls, name) else NOT_PROVIDED
@@ -625,21 +625,21 @@ class Bitfield(t.Generic[DynOptsT]):
                     f"in definition of '{cls.__name__}.{name}': {str(e)}"
                 ) from e
 
-            cls._fields[name] = bf_field
+            cls.__bydantic_fields__[name] = bf_field
 
     @classmethod
-    def _read_stream(
+    def __bydantic_read_stream__(
         cls,
         stream: BitstreamReader,
         opts: DynOptsT | None,
     ):
-        proxy: AttrProxy = AttrProxy({cls._DYN_OPTS_STR: opts})
+        proxy: AttrProxy = AttrProxy({cls.__BYDANTIC_DYN_OPTS_STR__: opts})
 
         stream = stream.reorder(cls._reorder)
 
-        for name, field in cls._fields.items():
+        for name, field in cls.__bydantic_fields__.items():
             try:
-                value, stream = cls._read_bftype(
+                value, stream = _read_bftype(
                     stream, field, proxy, opts
                 )
             except DeserializeFieldError as e:
@@ -652,78 +652,18 @@ class Bitfield(t.Generic[DynOptsT]):
 
         return cls(**proxy), stream
 
-    @classmethod
-    def _read_bftype(
-        cls,
-        stream: BitstreamReader,
-        bftype: BFType,
-        proxy: AttrProxy,
-        opts: t.Any
-    ) -> t.Tuple[t.Any, BitstreamReader]:
-        match bftype:
-            case BFBits(n=n):
-                return stream.take(n)
-
-            case BFInt(n=n):
-                return stream.take_int(n)
-
-            case BFList(inner=inner, n=n):
-                acc: t.List[t.Any] = []
-                for _ in range(n):
-                    item, stream = cls._read_bftype(
-                        stream, inner, proxy, opts
-                    )
-                    acc.append(item)
-                return acc, stream
-
-            case BFMap(inner=inner, vm=vm):
-                value, stream = cls._read_bftype(
-                    stream, inner, proxy, opts
-                )
-                return vm.forward(value), stream
-
-            case BFDynSelf(fn=fn):
-                return cls._read_bftype(stream, undisguise(fn(proxy)), proxy, opts)
-
-            case BFDynSelfN(fn=fn):
-                return cls._read_bftype(stream, undisguise(fn(proxy, stream.bits_remaining())), proxy, opts)
-
-            case BFLit(inner=inner, default=default):
-                value, stream = cls._read_bftype(
-                    stream, inner, proxy, opts
-                )
-                if value != default:
-                    raise ValueError(
-                        f"expected literal {default!r}, got {value!r}"
-                    )
-                return value, stream
-
-            case BFNone():
-                return None, stream
-
-            case BFBitfield(inner=inner, n=n):
-                substream, stream = stream.take_stream(n)
-
-                value, substream = inner._read_stream(substream, opts)
-
-                if substream.bits_remaining():
-                    raise ValueError(
-                        f"expected Bitfield of length {n}, got {n - substream.bits_remaining()}"
-                    )
-
-                return value, stream
-
-    def _write_stream(
+    def __bydantic_write_stream__(
         self,
         stream: BitstreamWriter,
         opts: DynOptsT | None,
     ) -> BitstreamWriter:
-        proxy = AttrProxy({**self.__dict__, self._DYN_OPTS_STR: opts})
+        proxy = AttrProxy(
+            {**self.__dict__, self.__BYDANTIC_DYN_OPTS_STR__: opts})
 
-        for name, field in self._fields.items():
+        for name, field in self.__bydantic_fields__.items():
             value = getattr(self, name)
             try:
-                stream = self._write_bftype(
+                stream = _write_bftype(
                     stream, field, value, proxy, opts
                 )
             except SerializeFieldError as e:
@@ -736,89 +676,148 @@ class Bitfield(t.Generic[DynOptsT]):
 
         return stream.unreorder(self._reorder)
 
-    @classmethod
-    def _write_bftype(
-        cls,
-        stream: BitstreamWriter,
-        bftype: BFType,
-        value: t.Any,
-        proxy: AttrProxy,
-        opts: t.Any
-    ) -> BitstreamWriter:
-        match bftype:
-            case BFBits(n=n):
-                if len(value) != n:
-                    raise ValueError(f"expected {n} bits, got {len(value)}")
-                return stream.put(value)
 
-            case BFInt(n=n):
-                if not isinstance(value, int):
-                    raise TypeError(
-                        f"expected int, got {type(value).__name__}"
-                    )
-                return stream.put_int(value, n)
+def _read_bftype(
+    stream: BitstreamReader,
+    bftype: BFType,
+    proxy: AttrProxy,
+    opts: t.Any
+) -> t.Tuple[t.Any, BitstreamReader]:
+    match bftype:
+        case BFBits(n=n):
+            return stream.take(n)
 
-            case BFList(inner=inner, n=n):
-                if len(value) != n:
-                    raise ValueError(f"expected {n} items, got {len(value)}")
-                for item in value:
-                    stream = cls._write_bftype(
-                        stream, inner, item, proxy, opts
-                    )
-                return stream
+        case BFInt(n=n):
+            return stream.take_int(n)
 
-            case BFMap(inner=inner, vm=vm):
-                first_arg = next(iter(inspect.signature(vm.back).parameters))
-                expected_type = t.get_type_hints(
-                    vm.back
-                ).get(first_arg, NOT_PROVIDED)
+        case BFList(inner=inner, n=n):
+            acc: t.List[t.Any] = []
+            for _ in range(n):
+                item, stream = _read_bftype(
+                    stream, inner, proxy, opts
+                )
+                acc.append(item)
+            return acc, stream
 
-                # If the first arg of the mappers transform has a type hint,
-                # check that the value is of that type
-                if is_provided(expected_type) and isinstance(expected_type, t.Type):
-                    if not isinstance(value, expected_type):
-                        raise TypeError(
-                            f"expected {expected_type.__name__}, got {type(value).__name__}"
-                        )
+        case BFMap(inner=inner, vm=vm):
+            value, stream = _read_bftype(
+                stream, inner, proxy, opts
+            )
+            return vm.forward(value), stream
 
-                return cls._write_bftype(stream, inner, vm.back(value), proxy, opts)
+        case BFDynSelf(fn=fn):
+            return _read_bftype(stream, undisguise(fn(proxy)), proxy, opts)
 
-            case BFDynSelf(fn=fn):
-                return cls._write_bftype(stream, undisguise(fn(proxy)), value, proxy, opts)
+        case BFDynSelfN(fn=fn):
+            return _read_bftype(stream, undisguise(fn(proxy, stream.bits_remaining())), proxy, opts)
 
-            case BFDynSelfN(fn=fn):
-                if is_bitfield(value):
-                    return value._write_stream(stream, opts)
+        case BFLit(inner=inner, default=default):
+            value, stream = _read_bftype(
+                stream, inner, proxy, opts
+            )
+            if value != default:
+                raise ValueError(
+                    f"expected literal {default!r}, got {value!r}"
+                )
+            return value, stream
 
-                if isinstance(value, (bool, bytes)) or value is None:
-                    return cls._write_bftype(stream, undisguise(value), value, proxy, opts)
+        case BFNone():
+            return None, stream
 
-                raise TypeError(
-                    f"dynamic fields that use discriminators with 'n bits remaining' "
-                    f"can only be used with Bitfield, bool, bytes, or None values. "
-                    f"{value!r} is not supported"
+        case BFBitfield(inner=inner, n=n):
+            substream, stream = stream.take_stream(n)
+
+            value, substream = inner.__bydantic_read_stream__(substream, opts)
+
+            if substream.bits_remaining():
+                raise ValueError(
+                    f"expected Bitfield of length {n}, got {n - substream.bits_remaining()}"
                 )
 
-            case BFLit(inner=inner, default=default):
-                if value != default:
-                    raise ValueError(f"expected {default!r}, got {value!r}")
-                return cls._write_bftype(stream, inner, value, proxy, opts)
+            return value, stream
 
-            case BFNone():
-                if value is not None:
-                    raise ValueError(f"expected None, got {value!r}")
-                return stream
 
-            case BFBitfield(inner=inner, n=n):
-                if not is_bitfield(value):
+def _write_bftype(
+    stream: BitstreamWriter,
+    bftype: BFType,
+    value: t.Any,
+    proxy: AttrProxy,
+    opts: t.Any
+) -> BitstreamWriter:
+    match bftype:
+        case BFBits(n=n):
+            if len(value) != n:
+                raise ValueError(f"expected {n} bits, got {len(value)}")
+            return stream.put(value)
+
+        case BFInt(n=n):
+            if not isinstance(value, int):
+                raise TypeError(
+                    f"expected int, got {type(value).__name__}"
+                )
+            return stream.put_int(value, n)
+
+        case BFList(inner=inner, n=n):
+            if len(value) != n:
+                raise ValueError(f"expected {n} items, got {len(value)}")
+            for item in value:
+                stream = _write_bftype(
+                    stream, inner, item, proxy, opts
+                )
+            return stream
+
+        case BFMap(inner=inner, vm=vm):
+            first_arg = next(iter(inspect.signature(vm.back).parameters))
+            expected_type = t.get_type_hints(
+                vm.back
+            ).get(first_arg, NOT_PROVIDED)
+
+            # If the first arg of the mappers transform has a type hint,
+            # check that the value is of that type
+            if is_provided(expected_type) and isinstance(expected_type, t.Type):
+                if not isinstance(value, expected_type):
                     raise TypeError(
-                        f"expected Bitfield, got {type(value).__name__}"
+                        f"expected {expected_type.__name__}, got {type(value).__name__}"
                     )
-                if value.length() is not None and value.length() != n:
-                    raise ValueError(
-                        f"expected Bitfield of length {n}, got {value.length()}"
-                    )
-                return value._write_stream(stream, opts)
+
+            return _write_bftype(stream, inner, vm.back(value), proxy, opts)
+
+        case BFDynSelf(fn=fn):
+            return _write_bftype(stream, undisguise(fn(proxy)), value, proxy, opts)
+
+        case BFDynSelfN(fn=fn):
+            if is_bitfield(value):
+                return value.__bydantic_write_stream__(stream, opts)
+
+            if isinstance(value, (bool, bytes)) or value is None:
+                return _write_bftype(stream, undisguise(value), value, proxy, opts)
+
+            raise TypeError(
+                f"dynamic fields that use discriminators with 'n bits remaining' "
+                f"can only be used with Bitfield, bool, bytes, or None values. "
+                f"{value!r} is not supported"
+            )
+
+        case BFLit(inner=inner, default=default):
+            if value != default:
+                raise ValueError(f"expected {default!r}, got {value!r}")
+            return _write_bftype(stream, inner, value, proxy, opts)
+
+        case BFNone():
+            if value is not None:
+                raise ValueError(f"expected None, got {value!r}")
+            return stream
+
+        case BFBitfield(inner=inner, n=n):
+            if not is_bitfield(value):
+                raise TypeError(
+                    f"expected Bitfield, got {type(value).__name__}"
+                )
+            if value.length() is not None and value.length() != n:
+                raise ValueError(
+                    f"expected Bitfield of length {n}, got {value.length()}"
+                )
+            return value.__bydantic_write_stream__(stream, opts)
 
 
 def _distill_field(type_hint: t.Any, value: t.Any) -> BFType:
