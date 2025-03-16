@@ -34,16 +34,12 @@ pip install bydantic
 Here's a simple example of how bydantic can be used:
 
 ```python
-from bydantic import (
-    Bitfield,
-    bf_int,
-    bf_str,
-)
+import bydantic as bd
 
-class Foo(Bitfield):
-    a: int = bf_int(4)
-    b: int = bf_int(4)
-    c: str = bf_str(n_bytes=1)
+class Foo(bd.Bitfield):
+    a: int = bd.int_field(4)
+    b: int = bd.int_field(4)
+    c: str = bd.str_field(n_bytes=1)
 ```
 
 This defines a bitfield with three fields: `a` and `b` are 4-bit integers, and
@@ -66,27 +62,20 @@ data structures. For example:
 
 ```python
 from __future__ import annotations
-import typing as t
-from bydantic import (
-    Bitfield,
-    bf_int,
-    bf_str,
-    bf_dyn,
-    bf_list,
-)
+import bydantic as bd
 
-class Foo(Bitfield):
-    a: int = bf_int(4)
-    b: int = bf_int(4)
-    c: str = bf_str(n_bytes=1)
+class Foo(bd.Bitfield):
+    a: int = bd.int_field(4)
+    b: int = bd.int_field(4)
+    c: str = bd.str_field(n_bytes=1)
 
 
 def discriminator(b: Bar):
-    return bf_int(8) if b.d[0].a == 0 else bf_str(n_bytes=1)
+    return bd.int_field(8) if b.d[0].a == 0 else bd.str_field(n_bytes=1)
 
-class Bar(Bitfield):
-    d: t.List[Foo] = bf_list(Foo, n_items = 2)
-    e: int | str = bf_dyn(discriminator)
+class Bar(bd.Bitfield):
+    d: list[Foo] = bd.list_field(Foo, n_items = 2)
+    e: int | str = bd.dynamic_field(discriminator)
 
 bar = Bar(d=[Foo(a=0, b=1, c="x"), Foo(a=2, b=3, c="y")], e=42)
 
@@ -103,8 +92,9 @@ This just scratches the surface of what bydantic can do... continue reading
 
 ## Features
 
-- Basic field types (e.g. `bf_int`, `bf_str`, `bf_bytes`, `bf_lit`, etc.)
-- Field type combinators (e.g. `bf_list`, `bf_dyn`, `bf_map`, etc.)
+- Basic field types (e.g. `int_field`, `str_field`, `bytes_field`, `lit_field`,
+  etc.)
+- Field type combinators (e.g. `list_field`, `dynamic_field`, `map_field`, etc.)
 - Serialization / deserialization context
 - Bitfield reordering / alignment
 - Clear error messages when fields fail to serialize / deserialize, even when
