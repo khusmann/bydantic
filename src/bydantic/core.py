@@ -299,7 +299,7 @@ def bf_int_enum(enum: t.Type[_E], n: int, *, default: _E | NotProvided = NOT_PRO
 @t.overload
 def bf_list(
     item: t.Type[_T] | BFTypeDisguised[_T],
-    n: int, *,
+    n_items: int, *,
     default: t.List[_T]
 ) -> BFTypeDisguised[t.List[_T]]: ...
 
@@ -307,21 +307,21 @@ def bf_list(
 @t.overload
 def bf_list(
     item: t.Type[_T] | BFTypeDisguised[_T],
-    n: int
+    n_items: int
 ) -> BFTypeDisguised[t.List[_T]]: ...
 
 
 def bf_list(
     item: t.Type[_T] | BFTypeDisguised[_T],
-    n: int, *,
+    n_items: int, *,
     default: t.List[_T] | NotProvided = NOT_PROVIDED
 ) -> BFTypeDisguised[t.List[_T]]:
 
-    if is_provided(default) and len(default) != n:
+    if is_provided(default) and len(default) != n_items:
         raise ValueError(
-            f"expected default list of length {n}, got {len(default)} ({default!r})"
+            f"expected default list of length {n_items}, got {len(default)} ({default!r})"
         )
-    return disguise(BFList(undisguise(item), n, default))
+    return disguise(BFList(undisguise(item), n_items, default))
 
 
 _LiteralT = t.TypeVar("_LiteralT", bound=str | int | float | bytes | Enum)
