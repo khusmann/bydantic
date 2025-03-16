@@ -59,10 +59,10 @@ def test_basic_context():
         a: int
 
     def ctx_disc(x: Foo):
-        if x.dyn_opts is None:
+        if x.bitfield_context is None:
             return None
 
-        if x.dyn_opts.a == 10:
+        if x.bitfield_context.a == 10:
             return bf_int(8)
         else:
             return None
@@ -79,8 +79,8 @@ def test_basic_context():
     foo2 = Foo.from_bytes_exact(b'\x05', Opts(a=10))
     assert foo2 == foo
 
-    assert foo.dyn_opts == None
-    assert foo2.dyn_opts == None
+    assert foo.bitfield_context == None
+    assert foo2.bitfield_context == None
 
 
 def test_basic_subclasses():
@@ -280,3 +280,26 @@ def test_dyn_error():
 
     with pytest.raises(SerializeFieldError, match=re.escape("TypeError in field 'Foo.b': expected int, got str")):
         Foo(a=0, b="a").to_bits()
+
+
+def test_context():
+    class Ctx(t.NamedTuple):
+        a: bool
+
+    def foo_disc(x: Foo):
+        if not x.bitfield_context:
+            raise ValueError("context not set")
+
+        if x.bitfield_context.a:
+            return bf_int(8)
+        else:
+            return bf_str(1)
+
+    class Foo(Bitfield[Ctx]):
+        a: int | str = bf_dyn(foo_disc)
+
+    assert Foo(a=1).to_bytes(Ctx(a=True)) == b'\x01'
+    assert Foo(a="a").to_bytes(Ctx(a=False)) == b'a'
+
+    assert Foo.from_bytes_exact(b'\x01', Ctx(a=True)) == Foo(a=1)
+    assert Foo.from_bytes_exact(b'a', Ctx(a=False)) == Foo(a="a")

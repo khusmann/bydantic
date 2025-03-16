@@ -463,7 +463,7 @@ def bf_bitfield(
     return disguise(BFBitfield(cls, n, default=default))
 
 
-DynOptsT = TypeVarDefault("DynOptsT", default=None)
+ContextT = TypeVarDefault("ContextT", default=None)
 
 
 @dataclass()
@@ -488,11 +488,11 @@ class BitfieldConfig:
         bf_dyn,
     )
 )
-class Bitfield(t.Generic[DynOptsT]):
+class Bitfield(t.Generic[ContextT]):
     __bydantic_fields__: t.ClassVar[t.Dict[str, BFType]] = {}
-    __BYDANTIC_DYN_OPTS_STR__: t.ClassVar[str] = "dyn_opts"
-    dyn_opts: DynOptsT | None = None
     bitfield_config: t.ClassVar[BitfieldConfig] = BitfieldConfig()
+    __BYDANTIC_CONTEXT_STR__: t.ClassVar[str] = "bitfield_context"
+    bitfield_context: ContextT | None = None
 
     def __init__(self, **kwargs: t.Any):
         for name, field in self.__bydantic_fields__.items():
@@ -535,7 +535,7 @@ class Bitfield(t.Generic[DynOptsT]):
         return acc
 
     @classmethod
-    def from_bits_exact(cls, bits: t.Sequence[bool], opts: DynOptsT | None = None):
+    def from_bits_exact(cls, bits: t.Sequence[bool], opts: ContextT | None = None):
         out, remaining = cls.from_bits(bits, opts)
 
         if remaining:
@@ -546,7 +546,7 @@ class Bitfield(t.Generic[DynOptsT]):
         return out
 
     @classmethod
-    def from_bytes_exact(cls, data: t.ByteString, opts: DynOptsT | None = None):
+    def from_bytes_exact(cls, data: t.ByteString, opts: ContextT | None = None):
         out, remaining = cls.from_bytes(data, opts)
 
         if remaining:
@@ -557,14 +557,14 @@ class Bitfield(t.Generic[DynOptsT]):
         return out
 
     @classmethod
-    def from_bits(cls, bits: t.Sequence[bool], opts: DynOptsT | None = None) -> t.Tuple[Self, t.Tuple[bool, ...]]:
+    def from_bits(cls, bits: t.Sequence[bool], opts: ContextT | None = None) -> t.Tuple[Self, t.Tuple[bool, ...]]:
         out, stream = cls.__bydantic_read_stream__(
             BitstreamReader.from_bits(bits), opts
         )
         return out, stream.as_bits()
 
     @classmethod
-    def from_bytes(cls, data: t.ByteString, opts: DynOptsT | None = None) -> t.Tuple[Self, bytes]:
+    def from_bytes(cls, data: t.ByteString, opts: ContextT | None = None) -> t.Tuple[Self, bytes]:
         out, stream = cls.__bydantic_read_stream__(
             BitstreamReader.from_bytes(data), opts
         )
@@ -574,7 +574,7 @@ class Bitfield(t.Generic[DynOptsT]):
     def from_bytes_batch(
         cls,
         data: t.ByteString,
-        opts: DynOptsT | None = None,
+        opts: ContextT | None = None,
         consume_errors: bool = False
     ) -> t.Tuple[t.List[Self], bytes]:
         out: t.List[Self] = []
@@ -601,10 +601,10 @@ class Bitfield(t.Generic[DynOptsT]):
 
         return out, stream.as_bytes()
 
-    def to_bits(self, opts: DynOptsT | None = None) -> t.Tuple[bool, ...]:
+    def to_bits(self, opts: ContextT | None = None) -> t.Tuple[bool, ...]:
         return self.__bydantic_write_stream__(BitstreamWriter(), opts).as_bits()
 
-    def to_bytes(self, opts: DynOptsT | None = None) -> bytes:
+    def to_bytes(self, opts: ContextT | None = None) -> bytes:
         return self.__bydantic_write_stream__(BitstreamWriter(), opts).as_bytes()
 
     def __init_subclass__(cls):
@@ -615,7 +615,7 @@ class Bitfield(t.Generic[DynOptsT]):
         parent_locals = parent_frame.f_locals if parent_frame else None
 
         for name, type_hint in t.get_type_hints(cls, localns=parent_locals).items():
-            if t.get_origin(type_hint) is t.ClassVar or name == cls.__BYDANTIC_DYN_OPTS_STR__:
+            if t.get_origin(type_hint) is t.ClassVar or name == cls.__BYDANTIC_CONTEXT_STR__:
                 continue
 
             value = getattr(cls, name) if hasattr(cls, name) else NOT_PROVIDED
@@ -638,9 +638,9 @@ class Bitfield(t.Generic[DynOptsT]):
     def __bydantic_read_stream__(
         cls,
         stream: BitstreamReader,
-        opts: DynOptsT | None,
+        opts: ContextT | None,
     ):
-        proxy: AttrProxy = AttrProxy({cls.__BYDANTIC_DYN_OPTS_STR__: opts})
+        proxy: AttrProxy = AttrProxy({cls.__BYDANTIC_CONTEXT_STR__: opts})
 
         stream = stream.reorder(cls.bitfield_config.reorder_bits)
 
@@ -662,10 +662,10 @@ class Bitfield(t.Generic[DynOptsT]):
     def __bydantic_write_stream__(
         self,
         stream: BitstreamWriter,
-        opts: DynOptsT | None,
+        opts: ContextT | None,
     ) -> BitstreamWriter:
         proxy = AttrProxy(
-            {**self.__dict__, self.__BYDANTIC_DYN_OPTS_STR__: opts})
+            {**self.__dict__, self.__BYDANTIC_CONTEXT_STR__: opts})
 
         for name, field in self.__bydantic_fields__.items():
             value = getattr(self, name)
