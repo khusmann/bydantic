@@ -262,15 +262,15 @@ def bool_field(*, default: bool) -> BFTypeDisguised[bool]: ...
 def bool_field() -> BFTypeDisguised[bool]: ...
 
 
-def bool_field(*, default: bool | NotProvided = NOT_PROVIDED) -> BFTypeDisguised[bool]:
+def bool_field(n: int = 1, *, default: bool | NotProvided = NOT_PROVIDED) -> BFTypeDisguised[bool]:
     class IntAsBool:
         def forward(self, x: int) -> bool:
-            return x == 1
+            return x != 0
 
         def back(self, y: bool) -> int:
             return 1 if y else 0
 
-    return _bf_map_helper(int_field(1), IntAsBool(), default=default)
+    return _bf_map_helper(int_field(n), IntAsBool(), default=default)
 
 
 _E = t.TypeVar("_E", bound=IntEnum | IntFlag)
