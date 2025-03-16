@@ -338,17 +338,17 @@ def bf_lit_int(n: int, *, default: _IntLiteralT) -> BFTypeDisguised[_IntLiteralT
 
 
 @t.overload
-def bf_bytes(n: int, *, default: bytes) -> BFTypeDisguised[bytes]: ...
+def bf_bytes(n_bytes: int, *, default: bytes) -> BFTypeDisguised[bytes]: ...
 
 
 @t.overload
-def bf_bytes(n: int) -> BFTypeDisguised[bytes]: ...
+def bf_bytes(n_bytes: int) -> BFTypeDisguised[bytes]: ...
 
 
-def bf_bytes(n: int, *, default: bytes | NotProvided = NOT_PROVIDED) -> BFTypeDisguised[bytes]:
-    if is_provided(default) and len(default) != n:
+def bf_bytes(n_bytes: int, *, default: bytes | NotProvided = NOT_PROVIDED) -> BFTypeDisguised[bytes]:
+    if is_provided(default) and len(default) != n_bytes:
         raise ValueError(
-            f"expected default bytes of length {n} bytes, got {len(default)} bytes ({default!r})"
+            f"expected default bytes of length {n_bytes} bytes, got {len(default)} bytes ({default!r})"
         )
 
     class ListAsBytes:
@@ -358,27 +358,27 @@ def bf_bytes(n: int, *, default: bytes | NotProvided = NOT_PROVIDED) -> BFTypeDi
         def back(self, y: bytes) -> t.List[int]:
             return list(y)
 
-    return _bf_map_helper(bf_list(bf_int(8), n), ListAsBytes(), default=default)
+    return _bf_map_helper(bf_list(bf_int(8), n_bytes), ListAsBytes(), default=default)
 
 
 @t.overload
 def bf_str(
-    n: int,
+    n_bytes: int,
     encoding: str = "utf-8", *,
     default: str,
 ) -> BFTypeDisguised[str]: ...
 
 
 @t.overload
-def bf_str(n: int, encoding: str = "utf-8") -> BFTypeDisguised[str]: ...
+def bf_str(n_bytes: int, encoding: str = "utf-8") -> BFTypeDisguised[str]: ...
 
 
-def bf_str(n: int, encoding: str = "utf-8", *, default: str | NotProvided = NOT_PROVIDED) -> BFTypeDisguised[str]:
+def bf_str(n_bytes: int, encoding: str = "utf-8", *, default: str | NotProvided = NOT_PROVIDED) -> BFTypeDisguised[str]:
     if is_provided(default):
         byte_len = len(default.encode(encoding))
-        if byte_len > n:
+        if byte_len > n_bytes:
             raise ValueError(
-                f"expected default string of maximum length {n} bytes, got {byte_len} bytes ({default!r})"
+                f"expected default string of maximum length {n_bytes} bytes, got {byte_len} bytes ({default!r})"
             )
 
     class BytesAsStr:
@@ -386,9 +386,9 @@ def bf_str(n: int, encoding: str = "utf-8", *, default: str | NotProvided = NOT_
             return x.decode(encoding).rstrip("\0")
 
         def back(self, y: str) -> bytes:
-            return y.ljust(n, "\0").encode(encoding)
+            return y.ljust(n_bytes, "\0").encode(encoding)
 
-    return _bf_map_helper(bf_bytes(n), BytesAsStr(), default=default)
+    return _bf_map_helper(bf_bytes(n_bytes), BytesAsStr(), default=default)
 
 
 @t.overload
