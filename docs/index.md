@@ -19,15 +19,25 @@ bydantic as a [pydantic-like](https://docs.pydantic.dev) library for serializing
 
 ## Installation
 
+Clone this repository and run:
+
+```bash
+pip install .
+```
+
+I will publish this package to PyPI once it is more stable.
+
+<!--
 bydantic is available on PyPI and can be installed using `pip`:
 
 ```bash
 pip install bydantic
 ```
+-->
 
 ## Quick Start
 
-Here's a simple example of bydantic can be used:
+Here's a simple example of how bydantic can be used:
 
 ```python
 from bydantic import (
