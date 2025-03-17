@@ -108,3 +108,11 @@ This just scratches the surface of what bydantic can do... continue reading
 - [Bitfield reordering / alignment](https://kylehusmann.com/bydantic/bitfield-reordering-alignment)
 - Clear error messages for serialization / deserialization failures, even when
   fields are deeply nested
+
+## Related Projects
+
+- [pydantic](https://docs.pydantic.dev)
+
+- [bitproto](https://bitproto.readthedocs.io/)
+
+- [bitstruct](https://bitstruct.readthedocs.io/)
