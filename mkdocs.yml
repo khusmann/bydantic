@@ -1,6 +1,15 @@
 site_name: bydantic
 site_url: https://kylehusmann.com/bydantic
 repo_url: https://github.com/khusmann/bydantic
+
+nav:
+  - Welcome to bydantic: index.md
+  - Getting Started: getting-started.md
+  - Basic Field Types: basic-field-types.md
+  - Field Type Combinators: field-type-combinators.md
+  - Serialization & Deserialization Context: serialization-deserialization-context.md
+  - Bitfield Reordering / Alignment: bitfield-reordering-alignment.md
+
 theme:
   name: material
   features:

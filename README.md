@@ -88,14 +88,15 @@ print(bar2) # Bar(d=[Foo(a=0, b=1, c='x'), Foo(a=2, b=3, c='y')], e=42)
 ```
 
 This just scratches the surface of what bydantic can do... continue reading
-[the docs](basic_field_types.md) for more info.
+[the docs](https://kylehusmann.com/bydantic/getting-started) for more info.
 
 ## Features
 
-- Basic field types (e.g. `int_field`, `str_field`, `bytes_field`, `lit_field`,
-  etc.)
-- Field type combinators (e.g. `list_field`, `dynamic_field`, `map_field`, etc.)
-- Serialization / deserialization context
-- Bitfield reordering / alignment
-- Clear error messages when fields fail to serialize / deserialize, even when
+- [Basic field types](https://kylehusmann.com/bydantic/basic-field-types) (e.g.
+  `int_field`, `str_field`, `bytes_field`, `lit_field`, etc.)
+- [Field type combinators](https://kylehusmann.com/bydantic/field-type-combinators)
+  (e.g. `list_field`, `dynamic_field`, `map_field`, etc.)
+- [Serialization & Deserialization context](https://kylehusmann.com/bydantic/serialization-deserialization-context)
+- [Bitfield reordering / alignment](https://kylehusmann.com/bydantic/bitfield-reordering-alignment)
+- Clear error messages for serialization / deserialization failures, even when
   fields are deeply nested
