@@ -7,9 +7,11 @@ bydantic allows you to declaratively define bitfields as Python classes with
 type hints, which then can be automatically serialized and deserialized to and
 from raw bytes.
 
-The name bydantic is a portmanteau of "bit" and "pydantic" -- you can think of
-bydantic as a [pydantic](https://docs.pydantic.dev)-like library for serializing
-/ deserializing bitfields instead of validating raw objects.
+The name bydantic is a portmanteau of "bit" and "pydantic" -- just as
+[pydantic](https://docs.pydantic.dev) gives developers a way to declaratively
+define data models with type hints and then serialize and deserialize raw
+objects against those models, bydantic gives developers a way to do the same
+with bitfields.
 
 ## Installation
 
@@ -100,3 +102,11 @@ This just scratches the surface of what bydantic can do... continue reading
 - [Bitfield reordering / alignment](https://kylehusmann.com/bydantic/bitfield-reordering-alignment)
 - Clear error messages for serialization / deserialization failures, even when
   fields are deeply nested
+
+## Related Projects
+
+- [pydantic](https://docs.pydantic.dev)
+
+- [bitproto](https://bitproto.readthedocs.io/)
+
+- [bitstruct](https://bitstruct.readthedocs.io/)
