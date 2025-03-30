@@ -16,8 +16,8 @@ from bydantic.utils import (
 
 def test_basic():
     class Work(bd.Bitfield):
-        a: int = bd.int_field(4)
-        b: t.List[int] = bd.list_field(bd.int_field(3), 4)
+        a: int = bd.uint_field(4)
+        b: t.List[int] = bd.list_field(bd.uint_field(3), 4)
         c: str = bd.str_field(3)
         d: bytes = bd.bytes_field(4)
 
@@ -47,7 +47,7 @@ def test_basic_context():
             return None
 
         if x.bitfield_context.a == 10:
-            return bd.int_field(8)
+            return bd.uint_field(8)
         else:
             return None
 
@@ -69,8 +69,8 @@ def test_basic_context():
 
 def test_basic_subclasses():
     class Work(bd.Bitfield):
-        a: int = bd.int_field(4)
-        b: t.List[int] = bd.list_field(bd.int_field(3), 4)
+        a: int = bd.uint_field(4)
+        b: t.List[int] = bd.list_field(bd.uint_field(3), 4)
 
     class Work2(Work):
         c: str = bd.str_field(3)
@@ -87,8 +87,8 @@ def test_basic_subclasses():
 
 def test_basic_reorder():
     class Work(bd.Bitfield):
-        a: int = bd.int_field(4)
-        b: t.List[int] = bd.list_field(bd.int_field(3), 4)
+        a: int = bd.uint_field(4)
+        b: t.List[int] = bd.list_field(bd.uint_field(3), 4)
         c: str = bd.str_field(3)
         d: bytes = bd.bytes_field(4)
 
@@ -103,8 +103,8 @@ def test_basic_reorder():
 
 def test_classvars():
     class Work(bd.Bitfield):
-        a: int = bd.int_field(4)
-        b: int = bd.int_field(4)
+        a: int = bd.uint_field(4)
+        b: int = bd.uint_field(4)
         c = 100
         d: t.ClassVar[int] = 100
 
@@ -120,32 +120,32 @@ def test_kitchen_sink():
         C = 3
 
     class Baz(bd.Bitfield):
-        a: int = bd.int_field(3)
-        b: int = bd.int_field(10)
+        a: int = bd.uint_field(3)
+        b: int = bd.uint_field(10)
 
     def foo(x: Foo) -> t.Literal[10] | list[float]:
         if x.ab == 1:
-            return bd.list_field(bd.map_field(bd.int_field(5), bd.Scale(100)), 1)
+            return bd.list_field(bd.map_field(bd.uint_field(5), bd.Scale(100)), 1)
         else:
-            return bd.lit_field(bd.int_field(5), default=10)
+            return bd.lit_field(bd.uint_field(5), default=10)
 
     class Foo(bd.Bitfield):
-        a: float = bd.map_field(bd.int_field(2), bd.Scale(1 / 2))
-        _pad: t.Literal[0x5] = bd.lit_field(bd.int_field(3), default=0x5)
+        a: float = bd.map_field(bd.uint_field(2), bd.Scale(1 / 2))
+        _pad: t.Literal[0x5] = bd.lit_field(bd.uint_field(3), default=0x5)
         ff: Baz
         ay: t.Literal[b'world'] = b'world'
-        ab: int = bd.int_field(10)
-        ac: int = bd.int_field(2)
-        zz: BarEnum = bd.int_enum_field(BarEnum, 2)
+        ab: int = bd.uint_field(10)
+        ac: int = bd.uint_field(2)
+        zz: BarEnum = bd.uint_enum_field(BarEnum, 2)
         yy: bytes = bd.bytes_field(2)
-        ad: int = bd.int_field(3)
+        ad: int = bd.uint_field(3)
         c: t.Literal[10] | list[float] | Baz = bd.dynamic_field(foo)
-        d: t.List[int] = bd.list_field(bd.int_field(10), 3)
+        d: t.List[int] = bd.list_field(bd.uint_field(10), 3)
         e: t.List[Baz] = bd.list_field(Baz, 3)
         f: t.Literal["Hello"] = bd.lit_field(bd.str_field(5), default="Hello")
         h: t.Literal[b"Hello"] = b"Hello"
         g: t.List[t.List[int]] = bd.list_field(
-            bd.list_field(bd.int_field(10), 3), 3)
+            bd.list_field(bd.uint_field(10), 3), 3)
         xx: bool
 
     f = Foo(
@@ -173,7 +173,7 @@ def test_default_len_err():
         b: bytes = bd.bytes_field(3, default=b"abc")
         c: t.Literal["ทt"] = bd.lit_field(bd.str_field(4), default="ทt")
         d: t.List[int] = bd.list_field(
-            bd.int_field(3), 4, default=[1, 2, 3, 4])
+            bd.uint_field(3), 4, default=[1, 2, 3, 4])
 
     assert Work.length() == 11*8 + 3*4
 
@@ -190,7 +190,7 @@ def test_default_len_err():
     with pytest.raises(ValueError, match=re.escape("expected default list of length 4, got 3 ([1, 2, 3])")):
         class Fail3(bd.Bitfield):
             a: t.List[int] = bd.list_field(
-                bd.int_field(3), 4, default=[1, 2, 3])
+                bd.uint_field(3), 4, default=[1, 2, 3])
         print(Fail3)
 
 
@@ -208,7 +208,7 @@ def test_incorrect_field_types():
 
 def test_dyn_infer_err():
     class DynFoo(bd.Bitfield):
-        a: int = bd.dynamic_field(lambda _, __: bd.int_field(4))
+        a: int = bd.dynamic_field(lambda _, __: bd.uint_field(4))
 
     with pytest.raises(TypeError, match=re.escape("in definition of 'Fail.a': cannot infer length for dynamic Bitfield")):
         class Fail(bd.Bitfield):
@@ -226,7 +226,7 @@ def test_lit_field_err():
 def test_default_children_err():
     with pytest.raises(ValueError, match=re.escape("in definition of 'Fail.a': inner field definitions cannot have defaults set (except literal fields)")):
         class Fail(bd.Bitfield):
-            a: t.List[int] = bd.list_field(bd.int_field(4, default=10), 4)
+            a: t.List[int] = bd.list_field(bd.uint_field(4, default=10), 4)
         print(Fail)
 
 
@@ -240,9 +240,9 @@ def test_bit_reorder():
 
 def test_nested_deserialize_error():
     class InnerFoo(bd.Bitfield):
-        a: t.Literal[1] = bd.lit_int_field(4, default=1)
-        b: int = bd.int_field(4)
-        c: int = bd.int_field(8)
+        a: t.Literal[1] = bd.lit_uint_field(4, default=1)
+        b: int = bd.uint_field(4)
+        c: int = bd.uint_field(8)
 
     class Bar(bd.Bitfield):
         z: InnerFoo = bd.bitfield_field(InnerFoo, 8)
@@ -256,9 +256,9 @@ def test_nested_deserialize_error():
 
 def test_dyn_error():
     class Foo(bd.Bitfield):
-        a: int = bd.int_field(8)
+        a: int = bd.uint_field(8)
         b: int | str = bd.dynamic_field(
-            lambda x: bd.int_field(8) if x.a == 0 else bd.str_field(1)
+            lambda x: bd.uint_field(8) if x.a == 0 else bd.str_field(1)
         )
 
     Foo(a=0, b=1).to_bits()
@@ -271,6 +271,28 @@ def test_dyn_error():
         Foo(a=0, b="a").to_bits()
 
 
+def test_signed_int():
+    class Foo(bd.Bitfield):
+        a: int = bd.int_field(8)
+
+    assert Foo(a=-1).to_bytes() == b'\xff'
+    assert Foo.from_bytes_exact(b'\xff') == Foo(a=-1)
+
+    with pytest.raises(bd.SerializeFieldError):
+        Foo(a=-129).to_bytes()
+        Foo(a=128).to_bytes()
+
+    with pytest.raises(ValueError):
+        class Fail1(bd.Bitfield):
+            a: int = bd.int_field(8, default=128)
+        print(Fail1)
+
+    with pytest.raises(ValueError):
+        class Fail2(bd.Bitfield):
+            a: int = bd.int_field(8, default=-129)
+        print(Fail2)
+
+
 def test_context():
     class Ctx(t.NamedTuple):
         a: bool
@@ -280,7 +302,7 @@ def test_context():
             raise ValueError("context not set")
 
         if x.bitfield_context.a:
-            return bd.int_field(8)
+            return bd.uint_field(8)
         else:
             return bd.str_field(1)
 

@@ -41,21 +41,28 @@ def unreorder_bits(data: t.Sequence[bool], order: t.Sequence[int]) -> t.Tuple[bo
 
 def bytes_to_bits(data: t.ByteString) -> t.Tuple[bool, ...]:
     return tuple(
-        bit for byte in data for bit in int_to_bits(byte, 8)
+        bit for byte in data for bit in uint_to_bits(byte, 8)
     )
 
 
-def int_to_bits(x: int, n: int) -> t.Tuple[bool, ...]:
+def uint_to_bits(x: int, n: int) -> t.Tuple[bool, ...]:
     if x < 0:
-        raise ValueError("int must be non-negative")
+        raise ValueError("value must be non-negative")
 
-    if x.bit_length() > n:
-        raise ValueError(f"int too large for {n} bits")
+    if is_it_too_big(x, n, signed=False):
+        raise ValueError(f"value ({x}) does not fit in {n} bits")
 
     return tuple(x & (1 << (n - i - 1)) != 0 for i in range(n))
 
 
-def bits_to_int(bits: t.Sequence[bool]) -> int:
+def is_it_too_big(x: int, n: int, signed: bool) -> bool:
+    if signed:
+        return not -(1 << (n-1)) <= x < (1 << (n-1))
+    else:
+        return not 0 <= x < (1 << n)
+
+
+def bits_to_uint(bits: t.Sequence[bool]) -> int:
     return sum((bit << (len(bits) - i - 1) for i, bit in enumerate(bits)))
 
 
@@ -64,7 +71,7 @@ def bits_to_bytes(bits: t.Sequence[bool]) -> bytes:
         raise ValueError("bits must be byte aligned (multiple of 8 bits)")
 
     return bytes(
-        bits_to_int(bits[i:i+8]) for i in range(0, len(bits), 8)
+        bits_to_uint(bits[i:i+8]) for i in range(0, len(bits), 8)
     )
 
 
@@ -77,8 +84,8 @@ class BitstreamWriter:
     def put(self, bits: t.Sequence[bool]):
         return BitstreamWriter(self._bits + tuple(bits))
 
-    def put_int(self, x: int, n: int):
-        return self.put(int_to_bits(x, n))
+    def put_uint(self, x: int, n: int):
+        return self.put(uint_to_bits(x, n))
 
     def put_bytes(self, data: t.ByteString):
         return self.put(bytes_to_bits(data))
@@ -129,9 +136,9 @@ class BitstreamReader:
 
         return self._bits[self._pos:n+self._pos], BitstreamReader(self._bits, self._pos+n)
 
-    def take_int(self, n: int):
+    def take_uint(self, n: int):
         value, stream = self.take(n)
-        return bits_to_int(value), stream
+        return bits_to_uint(value), stream
 
     def take_bytes(self, n_bytes: int):
         value, stream = self.take(n_bytes*8)

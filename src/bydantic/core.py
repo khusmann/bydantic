@@ -15,6 +15,7 @@ from .utils import (
     NOT_PROVIDED,
     NotProvided,
     is_provided,
+    is_it_too_big,
 )
 
 
@@ -80,7 +81,7 @@ class BFBits(t.NamedTuple):
     default: t.Sequence[bool] | NotProvided
 
 
-class BFInt(t.NamedTuple):
+class BFUInt(t.NamedTuple):
     n: int
     default: int | NotProvided
 
@@ -124,7 +125,7 @@ class BFNone(t.NamedTuple):
 
 BFType = t.Union[
     BFBits,
-    BFInt,
+    BFUInt,
     BFList,
     BFMap,
     BFDynSelf,
@@ -137,7 +138,7 @@ BFType = t.Union[
 
 def bftype_length(bftype: BFType) -> int | None:
     match bftype:
-        case BFBits(n=n) | BFBitfield(n=n) | BFInt(n=n):
+        case BFBits(n=n) | BFBitfield(n=n) | BFUInt(n=n):
             return n
 
         case BFList(inner=inner, n=n):
@@ -156,7 +157,7 @@ def bftype_length(bftype: BFType) -> int | None:
 
 def bftype_has_children_with_default(bftype: BFType) -> bool:
     match bftype:
-        case BFBits() | BFInt() | BFBitfield() | BFNone() | BFDynSelf() | BFDynSelfN():
+        case BFBits() | BFUInt() | BFBitfield() | BFNone() | BFDynSelf() | BFDynSelfN():
             return False
 
         case BFList(inner=inner) | BFMap(inner=inner) | BFLit(inner=inner):
@@ -243,6 +244,27 @@ def _bf_map_helper(
 
 
 @t.overload
+def uint_field(n: int, *, default: int) -> BFTypeDisguised[int]: ...
+
+
+@t.overload
+def uint_field(n: int) -> BFTypeDisguised[int]: ...
+
+
+def uint_field(n: int, *, default: int | NotProvided = NOT_PROVIDED) -> BFTypeDisguised[int]:
+    if is_provided(default):
+        if default < 0:
+            raise ValueError(
+                f"expected default to be non-negative, got {default}"
+            )
+        if is_it_too_big(default, n, signed=False):
+            raise ValueError(
+                f"expected default to fit in {n} bits, got {default}"
+            )
+    return disguise(BFUInt(n, default))
+
+
+@t.overload
 def int_field(n: int, *, default: int) -> BFTypeDisguised[int]: ...
 
 
@@ -251,7 +273,32 @@ def int_field(n: int) -> BFTypeDisguised[int]: ...
 
 
 def int_field(n: int, *, default: int | NotProvided = NOT_PROVIDED) -> BFTypeDisguised[int]:
-    return disguise(BFInt(n, default))
+    if is_provided(default):
+        if is_it_too_big(default, n, signed=True):
+            raise ValueError(
+                f"expected signed default to fit in {n} bits, got {default}"
+            )
+
+    class ConvertSign:
+        def forward(self, x: int) -> int:
+            # x will always fit in n bits because it was
+            # loaded by uint_field(n)
+
+            if (x & (1 << (n - 1))) != 0:
+                x -= 1 << n
+            return x
+
+        def back(self, y: int) -> int:
+            if is_it_too_big(y, n, signed=True):
+                raise ValueError(
+                    f"expected signed value to fit in {n} bits, got {y}"
+                )
+
+            if y < 0:
+                y += 1 << n
+            return y
+
+    return _bf_map_helper(uint_field(n), ConvertSign(), default=default)
 
 
 @t.overload
@@ -270,22 +317,22 @@ def bool_field(n: int = 1, *, default: bool | NotProvided = NOT_PROVIDED) -> BFT
         def back(self, y: bool) -> int:
             return 1 if y else 0
 
-    return _bf_map_helper(int_field(n), IntAsBool(), default=default)
+    return _bf_map_helper(uint_field(n), IntAsBool(), default=default)
 
 
 _E = t.TypeVar("_E", bound=IntEnum | IntFlag)
 
 
 @t.overload
-def int_enum_field(enum: t.Type[_E], n: int, *,
-                   default: _E) -> BFTypeDisguised[_E]: ...
+def uint_enum_field(enum: t.Type[_E], n: int, *,
+                    default: _E) -> BFTypeDisguised[_E]: ...
 
 
 @t.overload
-def int_enum_field(enum: t.Type[_E], n: int) -> BFTypeDisguised[_E]: ...
+def uint_enum_field(enum: t.Type[_E], n: int) -> BFTypeDisguised[_E]: ...
 
 
-def int_enum_field(enum: t.Type[_E], n: int, *, default: _E | NotProvided = NOT_PROVIDED) -> BFTypeDisguised[_E]:
+def uint_enum_field(enum: t.Type[_E], n: int, *, default: _E | NotProvided = NOT_PROVIDED) -> BFTypeDisguised[_E]:
     class IntAsEnum:
         def forward(self, x: int) -> _E:
             return enum(x)
@@ -293,7 +340,7 @@ def int_enum_field(enum: t.Type[_E], n: int, *, default: _E | NotProvided = NOT_
         def back(self, y: _E) -> int:
             return y.value
 
-    return _bf_map_helper(int_field(n), IntAsEnum(), default=default)
+    return _bf_map_helper(uint_field(n), IntAsEnum(), default=default)
 
 
 @t.overload
@@ -333,8 +380,8 @@ def lit_field(field: BFTypeDisguised[_LiteralT], *, default: _P) -> BFTypeDisgui
     return disguise(BFLit(undisguise(field), default))
 
 
-def lit_int_field(n: int, *, default: _IntLiteralT) -> BFTypeDisguised[_IntLiteralT]:
-    return lit_field(int_field(n), default=default)
+def lit_uint_field(n: int, *, default: _IntLiteralT) -> BFTypeDisguised[_IntLiteralT]:
+    return lit_field(uint_field(n), default=default)
 
 
 @t.overload
@@ -358,7 +405,7 @@ def bytes_field(n_bytes: int, *, default: bytes | NotProvided = NOT_PROVIDED) ->
         def back(self, y: bytes) -> t.List[int]:
             return list(y)
 
-    return _bf_map_helper(list_field(int_field(8), n_bytes), ListAsBytes(), default=default)
+    return _bf_map_helper(list_field(uint_field(8), n_bytes), ListAsBytes(), default=default)
 
 
 @t.overload
@@ -477,13 +524,13 @@ class BitfieldConfig:
     field_specifiers=(
         bits_field,
         map_field,
-        int_field,
+        uint_field,
         bool_field,
-        int_enum_field,
+        uint_enum_field,
         bitfield_field,
         list_field,
         lit_field,
-        lit_int_field,
+        lit_uint_field,
         bytes_field,
         str_field,
         dynamic_field,
@@ -698,8 +745,8 @@ def _read_bftype(
         case BFBits(n=n):
             return stream.take(n)
 
-        case BFInt(n=n):
-            return stream.take_int(n)
+        case BFUInt(n=n):
+            return stream.take_uint(n)
 
         case BFList(inner=inner, n=n):
             acc: t.List[t.Any] = []
@@ -761,12 +808,12 @@ def _write_bftype(
                 raise ValueError(f"expected {n} bits, got {len(value)}")
             return stream.put(value)
 
-        case BFInt(n=n):
+        case BFUInt(n=n):
             if not isinstance(value, int):
                 raise TypeError(
                     f"expected int, got {type(value).__name__}"
                 )
-            return stream.put_int(value, n)
+            return stream.put_uint(value, n)
 
         case BFList(inner=inner, n=n):
             if len(value) != n:
