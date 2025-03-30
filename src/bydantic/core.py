@@ -374,11 +374,10 @@ def bool_field(*, default: bool) -> Field[bool]: ...
 def bool_field() -> Field[bool]: ...
 
 
-def bool_field(n: int = 1, *, default: bool | ellipsis = ...) -> Field[bool]:
+def bool_field(*, default: bool | ellipsis = ...) -> Field[bool]:
     """ A boolean field type. (Bit flag)
 
     Args:
-        n (int): The number of bits used to represent the boolean.
         default (bool): An optional default value to use when constructing the field in a new object.
 
     Returns:
@@ -412,7 +411,7 @@ def bool_field(n: int = 1, *, default: bool | ellipsis = ...) -> Field[bool]:
         def back(self, y: bool) -> int:
             return 1 if y else 0
 
-    return _bf_map_helper(uint_field(n), IntAsBool(), default=ellipsis_to_not_provided(default))
+    return _bf_map_helper(uint_field(1), IntAsBool(), default=ellipsis_to_not_provided(default))
 
 
 IntEnumT = t.TypeVar("IntEnumT", bound=IntEnum | IntFlag)
