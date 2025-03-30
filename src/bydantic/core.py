@@ -252,6 +252,32 @@ def uint_field(n: int) -> BFTypeDisguised[int]: ...
 
 
 def uint_field(n: int, *, default: int | NotProvided = NOT_PROVIDED) -> BFTypeDisguised[int]:
+    """ An unsigned integer field type.
+
+    Args:
+        n: the number of bits used to represent the unsigned integer.
+
+        default: the default value to use when constructing the field in a new object.
+
+    Example:
+        ```python
+        class Foo(bd.Bitfield):
+            a: int = bd.uint_field(4)
+            b: int = bd.uint_field(4, default=0)
+
+        foo = Foo(a=1, b=2)
+        print(foo) # Foo(a=1, b=2)
+        print(foo.to_bytes()) # b'\\x12'
+
+        foo2 = Foo.from_bytes_exact(b'\\x34')
+        print(foo2) # Foo(a=3, b=4)
+
+        foo3 = Foo(a = 1) # b is set to 0 by default
+        print(foo3) # Foo(a=1, b=0)
+        print(foo3.to_bytes()) # b'\\x10'
+        ```
+    """
+
     if is_provided(default):
         if default < 0:
             raise ValueError(
@@ -273,6 +299,35 @@ def int_field(n: int) -> BFTypeDisguised[int]: ...
 
 
 def int_field(n: int, *, default: int | NotProvided = NOT_PROVIDED) -> BFTypeDisguised[int]:
+    """ A signed integer field type.
+
+    Args:
+        n (int): the number of bits used to represent the signed integer.
+
+        default (int): the default value to use when constructing the field in a new object.
+
+    Returns:
+        BFTypeDisguised[int]: A field type that represents a signed integer.
+
+    Example:
+        ```python
+        class Foo(bd.Bitfield):
+            a: int = bd.int_field(4)
+            b: int = bd.int_field(4, default=-1)
+
+        foo = Foo(a=1, b=-2)
+        print(foo) # Foo(a=1, b=-2)
+        print(foo.to_bytes()) # b'\\x16'
+
+        foo2 = Foo.from_bytes_exact(b'\\x34')
+        print(foo2) # Foo(a=3, b=4)
+
+        foo3 = Foo(a = 1) # b is set to -1 by default
+        print(foo3) # Foo(a=1, b=-1)
+        print(foo3.to_bytes()) # b'\\x13'
+        ```
+    """
+
     if is_provided(default):
         if is_it_too_big(default, n, signed=True):
             raise ValueError(
@@ -310,6 +365,30 @@ def bool_field() -> BFTypeDisguised[bool]: ...
 
 
 def bool_field(n: int = 1, *, default: bool | NotProvided = NOT_PROVIDED) -> BFTypeDisguised[bool]:
+    """ A boolean field type.
+
+    Args:
+        default: the default value to use when constructing the field in a new object.
+
+    Example:
+        ```python
+        class Foo(bd.Bitfield):
+            a: bool = bd.bool_field()
+            b: bool = bd.bool_field(default=True)
+            _pad: int = bd.uint_field(6, default=0) # Pad to a full byte
+
+        foo = Foo(a=True, b=False)
+        print(foo) # Foo(a=True, b=False)
+        print(foo.to_bytes()) # b'\\x80'
+
+        foo2 = Foo.from_bytes_exact(b'\\x40')
+        print(foo2) # Foo(a=False, b=True)
+
+        foo3 = Foo(a = True) # b is set to True by default
+        print(foo3) # Foo(a=True, b=True)
+        print(foo3.to_bytes()) # b'\xc0'
+        ```
+    """
     class IntAsBool:
         def forward(self, x: int) -> bool:
             return x != 0
@@ -333,6 +412,44 @@ def uint_enum_field(enum: t.Type[_E], n: int) -> BFTypeDisguised[_E]: ...
 
 
 def uint_enum_field(enum: t.Type[_E], n: int, *, default: _E | NotProvided = NOT_PROVIDED) -> BFTypeDisguised[_E]:
+    """ An unsigned integer enum field type.
+
+    Args:
+        enum (Type[IntEnum] | Type[IntFlag]): the enum class to use for the field.
+
+        n (int): the number of bits used to represent the enum.
+
+        default (IntEnum | IntFlag): the default value to use when constructing the field in a new object
+
+    Returns:
+        BFTypeDisguised[IntEnum | IntFlag]: A field type that represents an unsigned integer enum.
+
+    Example:
+        ```python
+        from enum import IntEnum
+
+        class Color(IntEnum):
+            RED = 1
+            GREEN = 2
+            BLUE = 3
+            PURPLE = 4
+
+        class Foo(bd.Bitfield):
+            a: Color = bd.uint_enum_field(4, Color)
+            b: Color = bd.uint_enum_field(4, Color, default=Color.GREEN)
+
+        foo = Foo(a=Color.RED, b=Color.BLUE)
+        print(foo) # Foo(a=<Color.RED: 1>, b=<Color.BLUE: 3>)
+        print(foo.to_bytes()) # b'\x13'
+
+        foo2 = Foo.from_bytes_exact(b'\x24')
+        print(foo2) # Foo(a=<Color.GREEN: 2>, b=<Color.PURPLE: 4>)
+
+        foo3 = Foo(a = Color.RED) # b is set to Color.GREEN by default
+        print(foo3) # Foo(a=<Color.RED: 1>, b=<Color.GREEN: 2>)
+        print(foo3.to_bytes()) # b'\x12'
+        ```
+    """
     class IntAsEnum:
         def forward(self, x: int) -> _E:
             return enum(x)
@@ -393,6 +510,34 @@ def bytes_field(n_bytes: int) -> BFTypeDisguised[bytes]: ...
 
 
 def bytes_field(n_bytes: int, *, default: bytes | NotProvided = NOT_PROVIDED) -> BFTypeDisguised[bytes]:
+    """ A bytes field type.
+
+    Args:
+        n_bytes: the number of bytes in the field.
+
+        default: the default value to use when constructing the field in a new object.
+
+    Returns:
+        BFTypeDisguised[bytes]: A field type that represents a sequence of bytes.
+
+    Example:
+        ```python
+        class Foo(bd.Bitfield):
+            a: bytes = bd.bytes_field(2)
+            b: bytes = bd.bytes_field(2, default=b"yz")
+
+        foo = Foo(a=b"xy", b=b"uv")
+        print(foo) # Foo(a=b'xy', b=b'uv')
+
+        foo2 = Foo.from_bytes_exact(b'xyuv')
+        print(foo2) # Foo(a=b'xy', b=b'uv')
+
+        foo3 = Foo(a = b"xy") # b is set to b"yz" by default
+        print(foo3) # Foo(a=b'xy', b=b'yz')
+        print(foo3.to_bytes()) # b'xyyz'
+        ```
+    """
+
     if is_provided(default) and len(default) != n_bytes:
         raise ValueError(
             f"expected default bytes of length {n_bytes} bytes, got {len(default)} bytes ({default!r})"
@@ -422,6 +567,33 @@ def str_field(
 
 
 def str_field(n_bytes: int, encoding: str = "utf-8", *, default: str | NotProvided = NOT_PROVIDED) -> BFTypeDisguised[str]:
+    """ A string field type.
+
+    Args:
+        n_bytes (int): the number of bytes in the field.
+        encoding (str): the encoding to use when converting the bytes to a string.
+        default (str): the default value to use when constructing the field in a new object.
+
+    Returns:
+        BFTypeDisguised[str]: A field type that represents a string.
+
+    Example:
+        ```python
+        class Foo(bd.Bitfield):
+            a: str = bd.str_field(2)
+            b: str = bd.str_field(2, default="yz")
+
+        foo = Foo(a="xy", b="uv")
+        print(foo) # Foo(a='xy', b='uv')
+
+        foo2 = Foo.from_bytes_exact(b'xyuv')
+        print(foo2) # Foo(a='xy', b='uv')
+
+        foo3 = Foo(a = "xy") # b is set to "yz" by default
+        print(foo3) # Foo(a='xy', b='yz')
+        print(foo3.to_bytes()) # b'xyyz'
+        ```
+    """
     if is_provided(default):
         byte_len = len(default.encode(encoding))
         if byte_len > n_bytes:
@@ -487,6 +659,33 @@ def none_field() -> BFTypeDisguised[None]: ...
 
 
 def none_field(*, default: None | NotProvided = NOT_PROVIDED) -> BFTypeDisguised[None]:
+    """ A field type that represents no data.
+
+    This field type is most useful when paired with `dynamic_field` to create
+    optional values in a Bitfield.
+
+    Args:
+        default (None): The default value, which is always `None`.
+
+    Returns:
+        BFTypeDisguised[None]: A field type that represents no data.
+
+    Example:
+        ```python
+        import bydantic as bd
+
+        class Foo(bd.Bitfield):
+            a: int = bd.uint_field(8)
+            b: int | None = bd.dynamic_field(lambda x: bd.uint_field(8) if x.a else bd.none_field())
+
+        foo = Foo.from_bytes_exact(b'\\x01\\x02')
+        print(foo) # Foo(a=1, b=2)
+
+        foo2 = Foo.from_bytes_exact(b'\\x00')
+        print(foo2) # Foo(a=0, b=None)
+
+        ```
+    """
     return disguise(BFNone(default=default))
 
 

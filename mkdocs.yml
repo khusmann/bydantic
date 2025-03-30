@@ -25,6 +25,15 @@ markdown_extensions:
   - pymdownx.superfences
 
 plugins:
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            annotations_path: brief
+            docstring_style: google
+            show_root_heading: true
+            show_root_full_path: false
+            show_source: false
   - gen-files:
       scripts:
         - update_readme.py
