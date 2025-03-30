@@ -15,7 +15,7 @@ from .utils import (
     NOT_PROVIDED,
     NotProvided,
     is_provided,
-    is_it_too_big,
+    is_int_too_big,
 )
 
 
@@ -287,7 +287,7 @@ def uint_field(n: int, *, default: int | NotProvided = NOT_PROVIDED) -> FieldTyp
             raise ValueError(
                 f"expected default to be non-negative, got {default}"
             )
-        if is_it_too_big(default, n, signed=False):
+        if is_int_too_big(default, n, signed=False):
             raise ValueError(
                 f"expected default to fit in {n} bits, got {default}"
             )
@@ -334,7 +334,7 @@ def int_field(n: int, *, default: int | NotProvided = NOT_PROVIDED) -> FieldType
     """
 
     if is_provided(default):
-        if is_it_too_big(default, n, signed=True):
+        if is_int_too_big(default, n, signed=True):
             raise ValueError(
                 f"expected signed default to fit in {n} bits, got {default}"
             )
@@ -349,7 +349,7 @@ def int_field(n: int, *, default: int | NotProvided = NOT_PROVIDED) -> FieldType
             return x
 
         def back(self, y: int) -> int:
-            if is_it_too_big(y, n, signed=True):
+            if is_int_too_big(y, n, signed=True):
                 raise ValueError(
                     f"expected signed value to fit in {n} bits, got {y}"
                 )

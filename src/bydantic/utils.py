@@ -49,13 +49,13 @@ def uint_to_bits(x: int, n: int) -> t.Tuple[bool, ...]:
     if x < 0:
         raise ValueError("value must be non-negative")
 
-    if is_it_too_big(x, n, signed=False):
+    if is_int_too_big(x, n, signed=False):
         raise ValueError(f"value ({x}) does not fit in {n} bits")
 
     return tuple(x & (1 << (n - i - 1)) != 0 for i in range(n))
 
 
-def is_it_too_big(x: int, n: int, signed: bool) -> bool:
+def is_int_too_big(x: int, n: int, signed: bool) -> bool:
     if signed:
         return not -(1 << (n-1)) <= x < (1 << (n-1))
     else:
