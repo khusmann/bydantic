@@ -263,6 +263,8 @@ def uint_field(n: int, *, default: int | NotProvided = NOT_PROVIDED) -> FieldTyp
 
     Example:
         ```python
+        import bydantic as bd
+
         class Foo(bd.Bitfield):
             a: int = bd.uint_field(4)
             b: int = bd.uint_field(4, default=0)
@@ -312,6 +314,8 @@ def int_field(n: int, *, default: int | NotProvided = NOT_PROVIDED) -> FieldType
 
     Example:
         ```python
+        import bydantic as bd
+
         class Foo(bd.Bitfield):
             a: int = bd.int_field(4)
             b: int = bd.int_field(4, default=-1)
@@ -377,6 +381,8 @@ def bool_field(n: int = 1, *, default: bool | NotProvided = NOT_PROVIDED) -> Fie
 
     Example:
         ```python
+        import bydantic as bd
+
         class Foo(bd.Bitfield):
             a: bool = bd.bool_field()
             b: bool = bd.bool_field(default=True)
@@ -430,6 +436,7 @@ def uint_enum_field(enum: t.Type[IntEnumT], n: int, *, default: IntEnumT | NotPr
 
     Example:
         ```python
+        import bydantic as bd
         from enum import IntEnum
 
         class Color(IntEnum):
@@ -525,6 +532,8 @@ def bytes_field(n_bytes: int, *, default: bytes | NotProvided = NOT_PROVIDED) ->
 
     Example:
         ```python
+        import bydantic as bd
+
         class Foo(bd.Bitfield):
             a: bytes = bd.bytes_field(2)
             b: bytes = bd.bytes_field(2, default=b"yz")
@@ -582,6 +591,8 @@ def str_field(n_bytes: int, encoding: str = "utf-8", *, default: str | NotProvid
 
     Example:
         ```python
+        import bydantic as bd
+
         class Foo(bd.Bitfield):
             a: str = bd.str_field(2)
             b: str = bd.str_field(2, default="yz")
