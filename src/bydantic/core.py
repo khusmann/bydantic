@@ -12,7 +12,10 @@ from .utils import (
     BitstreamReader,
     BitstreamWriter,
     AttrProxy,
+    NotProvided,
     is_provided,
+    NOT_PROVIDED,
+    ellipsis_to_not_provided,
     is_int_too_big,
 )
 
@@ -76,34 +79,34 @@ class IntScale(t.NamedTuple):
 
 class BFBits(t.NamedTuple):
     n: int
-    default: t.Sequence[bool] | ellipsis
+    default: t.Sequence[bool] | NotProvided
 
 
 class BFUInt(t.NamedTuple):
     n: int
-    default: int | ellipsis
+    default: int | NotProvided
 
 
 class BFList(t.NamedTuple):
     inner: BFType
     n: int
-    default: t.List[t.Any] | ellipsis
+    default: t.List[t.Any] | NotProvided
 
 
 class BFMap(t.NamedTuple):
     inner: BFType
     vm: ValueMapper[t.Any, t.Any]
-    default: t.Any | ellipsis
+    default: t.Any | NotProvided
 
 
 class BFDynSelf(t.NamedTuple):
     fn: t.Callable[[t.Any], FieldType[t.Any]]
-    default: t.Any | ellipsis
+    default: t.Any | NotProvided
 
 
 class BFDynSelfN(t.NamedTuple):
     fn: t.Callable[[t.Any, int], FieldType[t.Any]]
-    default: t.Any | ellipsis
+    default: t.Any | NotProvided
 
 
 class BFLit(t.NamedTuple):
@@ -114,11 +117,11 @@ class BFLit(t.NamedTuple):
 class BFBitfield(t.NamedTuple):
     inner: t.Type[Bitfield]
     n: int
-    default: Bitfield | ellipsis
+    default: Bitfield | NotProvided
 
 
 class BFNone(t.NamedTuple):
-    default: None | ellipsis
+    default: None | NotProvided
 
 
 BFType = t.Union[
@@ -204,7 +207,7 @@ def bits_field(n: int) -> FieldType[t.Tuple[bool, ...]]: ...
 
 
 def bits_field(n: int, *, default: t.Sequence[bool] | ellipsis = ...) -> FieldType[t.Tuple[bool, ...]]:
-    return disguise(BFBits(n, default))
+    return disguise(BFBits(n, ellipsis_to_not_provided(default)))
 
 
 @t.overload
@@ -227,13 +230,13 @@ def map_field(
     vm: ValueMapper[_T, _P], *,
     default: _P | ellipsis = ...
 ) -> FieldType[_P]:
-    return disguise(BFMap(undisguise(field), vm, default))
+    return disguise(BFMap(undisguise(field), vm, ellipsis_to_not_provided(default)))
 
 
 def _bf_map_helper(
     field: FieldType[_T],
     vm: ValueMapper[_T, _P], *,
-    default: _P | ellipsis = ...
+    default: _P | NotProvided = NOT_PROVIDED,
 ) -> FieldType[_P]:
     if is_provided(default):
         return map_field(field, vm, default=default)
@@ -280,16 +283,18 @@ def uint_field(n: int, *, default: int | ellipsis = ...) -> FieldType[int]:
         ```
     """
 
-    if is_provided(default):
-        if default < 0:
+    d = ellipsis_to_not_provided(default)
+
+    if is_provided(d):
+        if d < 0:
             raise ValueError(
-                f"expected default to be non-negative, got {default}"
+                f"expected default to be non-negative, got {d}"
             )
-        if is_int_too_big(default, n, signed=False):
+        if is_int_too_big(d, n, signed=False):
             raise ValueError(
-                f"expected default to fit in {n} bits, got {default}"
+                f"expected default to fit in {n} bits, got {d}"
             )
-    return disguise(BFUInt(n, default))
+    return disguise(BFUInt(n, d))
 
 
 @t.overload
@@ -331,10 +336,12 @@ def int_field(n: int, *, default: int | ellipsis = ...) -> FieldType[int]:
         ```
     """
 
-    if is_provided(default):
-        if is_int_too_big(default, n, signed=True):
+    d = ellipsis_to_not_provided(default)
+
+    if is_provided(d):
+        if is_int_too_big(d, n, signed=True):
             raise ValueError(
-                f"expected signed default to fit in {n} bits, got {default}"
+                f"expected signed default to fit in {n} bits, got {d}"
             )
 
     class ConvertSign:
@@ -356,7 +363,7 @@ def int_field(n: int, *, default: int | ellipsis = ...) -> FieldType[int]:
                 y += 1 << n
             return y
 
-    return _bf_map_helper(uint_field(n), ConvertSign(), default=default)
+    return _bf_map_helper(uint_field(n), ConvertSign(), default=d)
 
 
 @t.overload
@@ -405,7 +412,7 @@ def bool_field(n: int = 1, *, default: bool | ellipsis = ...) -> FieldType[bool]
         def back(self, y: bool) -> int:
             return 1 if y else 0
 
-    return _bf_map_helper(uint_field(n), IntAsBool(), default=default)
+    return _bf_map_helper(uint_field(n), IntAsBool(), default=ellipsis_to_not_provided(default))
 
 
 IntEnumT = t.TypeVar("IntEnumT", bound=IntEnum | IntFlag)
@@ -467,7 +474,7 @@ def uint_enum_field(enum: t.Type[IntEnumT], n: int, *, default: IntEnumT | ellip
         def back(self, y: IntEnumT) -> int:
             return y.value
 
-    return _bf_map_helper(uint_field(n), IntAsEnum(), default=default)
+    return _bf_map_helper(uint_field(n), IntAsEnum(), default=ellipsis_to_not_provided(default))
 
 
 @t.overload
@@ -491,11 +498,13 @@ def list_field(
     default: t.List[_T] | ellipsis = ...
 ) -> FieldType[t.List[_T]]:
 
-    if is_provided(default) and len(default) != n_items:
+    d = ellipsis_to_not_provided(default)
+
+    if is_provided(d) and len(d) != n_items:
         raise ValueError(
-            f"expected default list of length {n_items}, got {len(default)} ({default!r})"
+            f"expected default list of length {n_items}, got {len(d)} ({d!r})"
         )
-    return disguise(BFList(undisguise(item), n_items, default))
+    return disguise(BFList(undisguise(item), n_items, d))
 
 
 _LiteralT = t.TypeVar("_LiteralT", bound=str | int | float | bytes | Enum)
@@ -549,9 +558,11 @@ def bytes_field(n_bytes: int, *, default: bytes | ellipsis = ...) -> FieldType[b
         ```
     """
 
-    if is_provided(default) and len(default) != n_bytes:
+    d = ellipsis_to_not_provided(default)
+
+    if is_provided(d) and len(d) != n_bytes:
         raise ValueError(
-            f"expected default bytes of length {n_bytes} bytes, got {len(default)} bytes ({default!r})"
+            f"expected default bytes of length {n_bytes} bytes, got {len(d)} bytes ({d!r})"
         )
 
     class ListAsBytes:
@@ -561,7 +572,7 @@ def bytes_field(n_bytes: int, *, default: bytes | ellipsis = ...) -> FieldType[b
         def back(self, y: bytes) -> t.List[int]:
             return list(y)
 
-    return _bf_map_helper(list_field(uint_field(8), n_bytes), ListAsBytes(), default=default)
+    return _bf_map_helper(list_field(uint_field(8), n_bytes), ListAsBytes(), default=d)
 
 
 @t.overload
@@ -607,11 +618,14 @@ def str_field(n_bytes: int, encoding: str = "utf-8", *, default: str | ellipsis 
         print(foo3.to_bytes()) # b'xyyz'
         ```
     """
-    if is_provided(default):
-        byte_len = len(default.encode(encoding))
+
+    d = ellipsis_to_not_provided(default)
+
+    if is_provided(d):
+        byte_len = len(d.encode(encoding))
         if byte_len > n_bytes:
             raise ValueError(
-                f"expected default string of maximum length {n_bytes} bytes, got {byte_len} bytes ({default!r})"
+                f"expected default string of maximum length {n_bytes} bytes, got {byte_len} bytes ({d!r})"
             )
 
     class BytesAsStr:
@@ -621,7 +635,7 @@ def str_field(n_bytes: int, encoding: str = "utf-8", *, default: str | ellipsis 
         def back(self, y: str) -> bytes:
             return y.ljust(n_bytes, "\0").encode(encoding)
 
-    return _bf_map_helper(bytes_field(n_bytes), BytesAsStr(), default=default)
+    return _bf_map_helper(bytes_field(n_bytes), BytesAsStr(), default=d)
 
 
 @t.overload
@@ -701,7 +715,7 @@ def none_field(*, default: None | ellipsis = ...) -> FieldType[None]:
 
         ```
     """
-    return disguise(BFNone(default=default))
+    return disguise(BFNone(default=ellipsis_to_not_provided(default)))
 
 
 @t.overload
@@ -722,7 +736,7 @@ def bitfield_field(
     n: int, *,
     default: BitfieldT | ellipsis = ...
 ) -> FieldType[BitfieldT]:
-    return disguise(BFBitfield(cls, n, default=default))
+    return disguise(BFBitfield(cls, n, default=ellipsis_to_not_provided(default)))
 
 
 ContextT = TypeVarDefault("ContextT", default=None)
@@ -758,7 +772,7 @@ class Bitfield(t.Generic[ContextT]):
 
     def __init__(self, **kwargs: t.Any):
         for name, field in self.__bydantic_fields__.items():
-            value = kwargs.get(name, ...)
+            value = kwargs.get(name, NOT_PROVIDED)
 
             if not is_provided(value):
                 if is_provided(field.default):
@@ -880,7 +894,7 @@ class Bitfield(t.Generic[ContextT]):
             if t.get_origin(type_hint) is t.ClassVar or name == cls.__BYDANTIC_CONTEXT_STR__:
                 continue
 
-            value = getattr(cls, name) if hasattr(cls, name) else ...
+            value = getattr(cls, name) if hasattr(cls, name) else NOT_PROVIDED
 
             try:
                 bf_field = _distill_field(type_hint, value)
@@ -1042,7 +1056,7 @@ def _write_bftype(
             first_arg = next(iter(inspect.signature(vm.back).parameters))
             expected_type = t.get_type_hints(
                 vm.back
-            ).get(first_arg, ...)
+            ).get(first_arg, NOT_PROVIDED)
 
             # If the first arg of the mappers transform has a type hint,
             # check that the value is of that type

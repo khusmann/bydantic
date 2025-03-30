@@ -194,5 +194,16 @@ class AttrProxy(t.Mapping[str, t.Any]):
 _T = t.TypeVar("_T")
 
 
-def is_provided(x: _T | ellipsis) -> t.TypeGuard[_T]:
-    return x is not Ellipsis
+class NotProvided:
+    def __repr__(self): return "<NotProvided>"
+
+
+NOT_PROVIDED = NotProvided()
+
+
+def is_provided(x: _T | NotProvided) -> t.TypeGuard[_T]:
+    return x is not NOT_PROVIDED
+
+
+def ellipsis_to_not_provided(x: _T | ellipsis) -> _T | NotProvided:
+    return NOT_PROVIDED if x is ... else x
