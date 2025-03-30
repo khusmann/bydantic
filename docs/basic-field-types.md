@@ -1,9 +1,9 @@
 # Field Type Reference
 
-## Basic Field Types
+## Field Type Primitives
 
-bydantic comes with a variety of basic field types that can be used to define
-bitfields. From these primatives, more complex data structures can be
+bydantic comes with a variety of primitive field types that can be used to
+define bitfields. From these primitives, more complex data structures can be
 constructed via [field type combinators](#field-type-combinators).
 
 ### ::: bydantic.uint_field
@@ -25,3 +25,11 @@ constructed via [field type combinators](#field-type-combinators).
 ### ::: bydantic.bitfield_field
 
 ## Field Type Combinators
+
+### ::: bydantic.lit_field
+
+### ::: bydantic.list_field
+
+### ::: bydantic.dynamic_field
+
+### ::: bydantic.map_field

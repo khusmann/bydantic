@@ -255,9 +255,11 @@ def uint_field(n: int, *, default: int | NotProvided = NOT_PROVIDED) -> FieldTyp
     """ An unsigned integer field type.
 
     Args:
-        n: the number of bits used to represent the unsigned integer.
+        n (int): the number of bits used to represent the unsigned integer.
+        default (int): the default value to use when constructing the field in a new object.
 
-        default: the default value to use when constructing the field in a new object.
+    Returns:
+        FieldType[int]: A field type that represents an unsigned integer.
 
     Example:
         ```python
@@ -303,11 +305,10 @@ def int_field(n: int, *, default: int | NotProvided = NOT_PROVIDED) -> FieldType
 
     Args:
         n (int): the number of bits used to represent the signed integer.
-
         default (int): the default value to use when constructing the field in a new object.
 
     Returns:
-        BFTypeDisguised[int]: A field type that represents a signed integer.
+        FieldType[int]: A field type that represents a signed integer.
 
     Example:
         ```python
@@ -368,7 +369,11 @@ def bool_field(n: int = 1, *, default: bool | NotProvided = NOT_PROVIDED) -> Fie
     """ A boolean field type.
 
     Args:
-        default: the default value to use when constructing the field in a new object.
+        n (int): the number of bits used to represent the boolean.
+        default (bool): the default value to use when constructing the field in a new object.
+
+    Returns:
+        FieldType[bool]: A field type that represents a boolean.
 
     Example:
         ```python
@@ -417,13 +422,11 @@ def uint_enum_field(enum: t.Type[IntEnumT], n: int, *, default: IntEnumT | NotPr
 
     Args:
         enum (Type[IntEnum] | Type[IntFlag]): the enum class to use for the field.
-
         n (int): the number of bits used to represent the enum.
-
         default (IntEnum | IntFlag): the default value to use when constructing the field in a new object
 
     Returns:
-        BFTypeDisguised[IntEnum | IntFlag]: A field type that represents an unsigned integer enum.
+        FieldType[IntEnum | IntFlag]: A field type that represents an unsigned integer enum.
 
     Example:
         ```python
@@ -514,12 +517,11 @@ def bytes_field(n_bytes: int, *, default: bytes | NotProvided = NOT_PROVIDED) ->
     """ A bytes field type.
 
     Args:
-        n_bytes: the number of bytes in the field.
-
-        default: the default value to use when constructing the field in a new object.
+        n_bytes (int): the number of bytes in the field.
+        default (bytes): the default value to use when constructing the field in a new object.
 
     Returns:
-        BFTypeDisguised[bytes]: A field type that represents a sequence of bytes.
+        FieldType[bytes]: A field type that represents a sequence of bytes.
 
     Example:
         ```python
@@ -576,7 +578,7 @@ def str_field(n_bytes: int, encoding: str = "utf-8", *, default: str | NotProvid
         default (str): the default value to use when constructing the field in a new object.
 
     Returns:
-        BFTypeDisguised[str]: A field type that represents a string.
+        FieldType[str]: A field type that represents a string.
 
     Example:
         ```python
@@ -669,7 +671,7 @@ def none_field(*, default: None | NotProvided = NOT_PROVIDED) -> FieldType[None]
         default (None): The default value, which is always `None`.
 
     Returns:
-        BFTypeDisguised[None]: A field type that represents no data.
+        FieldType[None]: A field type that represents no data.
 
     Example:
         ```python
