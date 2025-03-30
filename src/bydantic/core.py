@@ -12,8 +12,6 @@ from .utils import (
     BitstreamReader,
     BitstreamWriter,
     AttrProxy,
-    NOT_PROVIDED,
-    NotProvided,
     is_provided,
     is_int_too_big,
 )
@@ -78,34 +76,34 @@ class IntScale(t.NamedTuple):
 
 class BFBits(t.NamedTuple):
     n: int
-    default: t.Sequence[bool] | NotProvided
+    default: t.Sequence[bool] | ellipsis
 
 
 class BFUInt(t.NamedTuple):
     n: int
-    default: int | NotProvided
+    default: int | ellipsis
 
 
 class BFList(t.NamedTuple):
     inner: BFType
     n: int
-    default: t.List[t.Any] | NotProvided
+    default: t.List[t.Any] | ellipsis
 
 
 class BFMap(t.NamedTuple):
     inner: BFType
     vm: ValueMapper[t.Any, t.Any]
-    default: t.Any | NotProvided
+    default: t.Any | ellipsis
 
 
 class BFDynSelf(t.NamedTuple):
     fn: t.Callable[[t.Any], FieldType[t.Any]]
-    default: t.Any | NotProvided
+    default: t.Any | ellipsis
 
 
 class BFDynSelfN(t.NamedTuple):
     fn: t.Callable[[t.Any, int], FieldType[t.Any]]
-    default: t.Any | NotProvided
+    default: t.Any | ellipsis
 
 
 class BFLit(t.NamedTuple):
@@ -116,11 +114,11 @@ class BFLit(t.NamedTuple):
 class BFBitfield(t.NamedTuple):
     inner: t.Type[Bitfield]
     n: int
-    default: Bitfield | NotProvided
+    default: Bitfield | ellipsis
 
 
 class BFNone(t.NamedTuple):
-    default: None | NotProvided
+    default: None | ellipsis
 
 
 BFType = t.Union[
@@ -205,7 +203,7 @@ def bits_field(
 def bits_field(n: int) -> FieldType[t.Tuple[bool, ...]]: ...
 
 
-def bits_field(n: int, *, default: t.Sequence[bool] | NotProvided = NOT_PROVIDED) -> FieldType[t.Tuple[bool, ...]]:
+def bits_field(n: int, *, default: t.Sequence[bool] | ellipsis = ...) -> FieldType[t.Tuple[bool, ...]]:
     return disguise(BFBits(n, default))
 
 
@@ -227,7 +225,7 @@ def map_field(
 def map_field(
     field: FieldType[_T],
     vm: ValueMapper[_T, _P], *,
-    default: _P | NotProvided = NOT_PROVIDED
+    default: _P | ellipsis = ...
 ) -> FieldType[_P]:
     return disguise(BFMap(undisguise(field), vm, default))
 
@@ -235,7 +233,7 @@ def map_field(
 def _bf_map_helper(
     field: FieldType[_T],
     vm: ValueMapper[_T, _P], *,
-    default: _P | NotProvided = NOT_PROVIDED
+    default: _P | ellipsis = ...
 ) -> FieldType[_P]:
     if is_provided(default):
         return map_field(field, vm, default=default)
@@ -251,12 +249,12 @@ def uint_field(n: int, *, default: int) -> FieldType[int]: ...
 def uint_field(n: int) -> FieldType[int]: ...
 
 
-def uint_field(n: int, *, default: int | NotProvided = NOT_PROVIDED) -> FieldType[int]:
+def uint_field(n: int, *, default: int | ellipsis = ...) -> FieldType[int]:
     """ An unsigned integer field type.
 
     Args:
-        n (int): the number of bits used to represent the unsigned integer.
-        default (int): the default value to use when constructing the field in a new object.
+        n (int): The number of bits used to represent the unsigned integer.
+        default (int): An optional default value to use when constructing the field in a new object.
 
     Returns:
         FieldType[int]: A field type that represents an unsigned integer.
@@ -302,12 +300,12 @@ def int_field(n: int, *, default: int) -> FieldType[int]: ...
 def int_field(n: int) -> FieldType[int]: ...
 
 
-def int_field(n: int, *, default: int | NotProvided = NOT_PROVIDED) -> FieldType[int]:
+def int_field(n: int, *, default: int | ellipsis = ...) -> FieldType[int]:
     """ A signed integer field type.
 
     Args:
-        n (int): the number of bits used to represent the signed integer.
-        default (int): the default value to use when constructing the field in a new object.
+        n (int): The number of bits used to represent the signed integer.
+        default (int): An optional default value to use when constructing the field in a new object.
 
     Returns:
         FieldType[int]: A field type that represents a signed integer.
@@ -369,12 +367,12 @@ def bool_field(*, default: bool) -> FieldType[bool]: ...
 def bool_field() -> FieldType[bool]: ...
 
 
-def bool_field(n: int = 1, *, default: bool | NotProvided = NOT_PROVIDED) -> FieldType[bool]:
-    """ A boolean field type.
+def bool_field(n: int = 1, *, default: bool | ellipsis = ...) -> FieldType[bool]:
+    """ A boolean field type. (Bit flag)
 
     Args:
-        n (int): the number of bits used to represent the boolean.
-        default (bool): the default value to use when constructing the field in a new object.
+        n (int): The number of bits used to represent the boolean.
+        default (bool): An optional default value to use when constructing the field in a new object.
 
     Returns:
         FieldType[bool]: A field type that represents a boolean.
@@ -423,16 +421,17 @@ def uint_enum_field(enum: t.Type[IntEnumT],
                     n: int) -> FieldType[IntEnumT]: ...
 
 
-def uint_enum_field(enum: t.Type[IntEnumT], n: int, *, default: IntEnumT | NotProvided = NOT_PROVIDED) -> FieldType[IntEnumT]:
+def uint_enum_field(enum: t.Type[IntEnumT], n: int, *, default: IntEnumT | ellipsis = ...) -> FieldType[IntEnumT]:
     """ An unsigned integer enum field type.
 
     Args:
-        enum (Type[IntEnum] | Type[IntFlag]): the enum class to use for the field.
-        n (int): the number of bits used to represent the enum.
-        default (IntEnum | IntFlag): the default value to use when constructing the field in a new object
+        enum (Type[IntEnumT]): The enum class to use for the field. (Must be a subclass of IntEnum or IntFlag)
+        n (int): The number of bits used to represent the enum.
+        default (IntEnumT): An optional default value to use when constructing the field in a new object
+            (Must match the enum type passed in the `enum` arg).
 
     Returns:
-        FieldType[IntEnum | IntFlag]: A field type that represents an unsigned integer enum.
+        FieldType[IntEnumT]: A field type that represents an unsigned integer enum.
 
     Example:
         ```python
@@ -489,7 +488,7 @@ def list_field(
 def list_field(
     item: t.Type[_T] | FieldType[_T],
     n_items: int, *,
-    default: t.List[_T] | NotProvided = NOT_PROVIDED
+    default: t.List[_T] | ellipsis = ...
 ) -> FieldType[t.List[_T]]:
 
     if is_provided(default) and len(default) != n_items:
@@ -520,12 +519,12 @@ def bytes_field(n_bytes: int, *, default: bytes) -> FieldType[bytes]: ...
 def bytes_field(n_bytes: int) -> FieldType[bytes]: ...
 
 
-def bytes_field(n_bytes: int, *, default: bytes | NotProvided = NOT_PROVIDED) -> FieldType[bytes]:
+def bytes_field(n_bytes: int, *, default: bytes | ellipsis = ...) -> FieldType[bytes]:
     """ A bytes field type.
 
     Args:
-        n_bytes (int): the number of bytes in the field.
-        default (bytes): the default value to use when constructing the field in a new object.
+        n_bytes (int): The number of bytes in the field.
+        default (bytes): An optional default value to use when constructing the field in a new object.
 
     Returns:
         FieldType[bytes]: A field type that represents a sequence of bytes.
@@ -578,13 +577,13 @@ def str_field(
     n_bytes: int, encoding: str = "utf-8") -> FieldType[str]: ...
 
 
-def str_field(n_bytes: int, encoding: str = "utf-8", *, default: str | NotProvided = NOT_PROVIDED) -> FieldType[str]:
+def str_field(n_bytes: int, encoding: str = "utf-8", *, default: str | ellipsis = ...) -> FieldType[str]:
     """ A string field type.
 
     Args:
-        n_bytes (int): the number of bytes in the field.
-        encoding (str): the encoding to use when converting the bytes to a string.
-        default (str): the default value to use when constructing the field in a new object.
+        n_bytes (int): The number of bytes in the field.
+        encoding (str): The encoding to use when converting the bytes to a string.
+        default (str): An optional default value to use when constructing the field in a new object.
 
     Returns:
         FieldType[str]: A field type that represents a string.
@@ -643,7 +642,7 @@ def dynamic_field(
 def dynamic_field(
     fn: t.Callable[[t.Any], t.Type[_T] | FieldType[_T]] |
         t.Callable[[t.Any, int], t.Type[_T] | FieldType[_T]], *,
-    default: _T | NotProvided = NOT_PROVIDED
+    default: _T | ellipsis = ...
 ) -> FieldType[_T]:
     n_params = len(inspect.signature(fn).parameters)
     match n_params:
@@ -672,14 +671,16 @@ def none_field(*, default: None) -> FieldType[None]: ...
 def none_field() -> FieldType[None]: ...
 
 
-def none_field(*, default: None | NotProvided = NOT_PROVIDED) -> FieldType[None]:
+def none_field(*, default: None | ellipsis = ...) -> FieldType[None]:
     """ A field type that represents no data.
 
     This field type is most useful when paired with `dynamic_field` to create
     optional values in a Bitfield.
 
     Args:
-        default (None): The default value, which is always `None`.
+        default (None): The default value, which is always `None`. (It is explicitly
+            set here so type-checking tools can infer a default has been set on the
+            field.)
 
     Returns:
         FieldType[None]: A field type that represents no data.
@@ -719,7 +720,7 @@ def bitfield_field(
 def bitfield_field(
     cls: t.Type[BitfieldT],
     n: int, *,
-    default: BitfieldT | NotProvided = NOT_PROVIDED
+    default: BitfieldT | ellipsis = ...
 ) -> FieldType[BitfieldT]:
     return disguise(BFBitfield(cls, n, default=default))
 
@@ -757,7 +758,7 @@ class Bitfield(t.Generic[ContextT]):
 
     def __init__(self, **kwargs: t.Any):
         for name, field in self.__bydantic_fields__.items():
-            value = kwargs.get(name, NOT_PROVIDED)
+            value = kwargs.get(name, ...)
 
             if not is_provided(value):
                 if is_provided(field.default):
@@ -879,7 +880,7 @@ class Bitfield(t.Generic[ContextT]):
             if t.get_origin(type_hint) is t.ClassVar or name == cls.__BYDANTIC_CONTEXT_STR__:
                 continue
 
-            value = getattr(cls, name) if hasattr(cls, name) else NOT_PROVIDED
+            value = getattr(cls, name) if hasattr(cls, name) else ...
 
             try:
                 bf_field = _distill_field(type_hint, value)
@@ -1041,7 +1042,7 @@ def _write_bftype(
             first_arg = next(iter(inspect.signature(vm.back).parameters))
             expected_type = t.get_type_hints(
                 vm.back
-            ).get(first_arg, NOT_PROVIDED)
+            ).get(first_arg, ...)
 
             # If the first arg of the mappers transform has a type hint,
             # check that the value is of that type
@@ -1092,7 +1093,7 @@ def _write_bftype(
 
 
 def _distill_field(type_hint: t.Any, value: t.Any) -> BFType:
-    if value is NOT_PROVIDED:
+    if not is_provided(value):
         if isinstance(type_hint, type) and issubclass(type_hint, (Bitfield, bool)):
             return undisguise(type_hint)
 
