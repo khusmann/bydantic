@@ -399,19 +399,20 @@ def bool_field(n: int = 1, *, default: bool | NotProvided = NOT_PROVIDED) -> BFT
     return _bf_map_helper(uint_field(n), IntAsBool(), default=default)
 
 
-_E = t.TypeVar("_E", bound=IntEnum | IntFlag)
+IntEnumT = t.TypeVar("IntEnumT", bound=IntEnum | IntFlag)
 
 
 @t.overload
-def uint_enum_field(enum: t.Type[_E], n: int, *,
-                    default: _E) -> BFTypeDisguised[_E]: ...
+def uint_enum_field(enum: t.Type[IntEnumT], n: int, *,
+                    default: IntEnumT) -> BFTypeDisguised[IntEnumT]: ...
 
 
 @t.overload
-def uint_enum_field(enum: t.Type[_E], n: int) -> BFTypeDisguised[_E]: ...
+def uint_enum_field(enum: t.Type[IntEnumT],
+                    n: int) -> BFTypeDisguised[IntEnumT]: ...
 
 
-def uint_enum_field(enum: t.Type[_E], n: int, *, default: _E | NotProvided = NOT_PROVIDED) -> BFTypeDisguised[_E]:
+def uint_enum_field(enum: t.Type[IntEnumT], n: int, *, default: IntEnumT | NotProvided = NOT_PROVIDED) -> BFTypeDisguised[IntEnumT]:
     """ An unsigned integer enum field type.
 
     Args:
@@ -451,10 +452,10 @@ def uint_enum_field(enum: t.Type[_E], n: int, *, default: _E | NotProvided = NOT
         ```
     """
     class IntAsEnum:
-        def forward(self, x: int) -> _E:
+        def forward(self, x: int) -> IntEnumT:
             return enum(x)
 
-        def back(self, y: _E) -> int:
+        def back(self, y: IntEnumT) -> int:
             return y.value
 
     return _bf_map_helper(uint_field(n), IntAsEnum(), default=default)
