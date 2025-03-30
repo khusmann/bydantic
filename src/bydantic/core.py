@@ -99,12 +99,12 @@ class BFMap(t.NamedTuple):
 
 
 class BFDynSelf(t.NamedTuple):
-    fn: t.Callable[[t.Any], BFTypeDisguised[t.Any]]
+    fn: t.Callable[[t.Any], FieldType[t.Any]]
     default: t.Any | NotProvided
 
 
 class BFDynSelfN(t.NamedTuple):
-    fn: t.Callable[[t.Any, int], BFTypeDisguised[t.Any]]
+    fn: t.Callable[[t.Any, int], FieldType[t.Any]]
     default: t.Any | NotProvided
 
 
@@ -164,14 +164,14 @@ def bftype_has_children_with_default(bftype: BFType) -> bool:
             return is_provided(inner.default) or bftype_has_children_with_default(inner)
 
 
-BFTypeDisguised = t.Annotated[_T, "BFTypeDisguised"]
+FieldType = t.Annotated[_T, "BFTypeDisguised"]
 
 
-def disguise(x: BFType) -> BFTypeDisguised[t.Any]:
+def disguise(x: BFType) -> FieldType[t.Any]:
     return x  # type: ignore
 
 
-def undisguise(x: BFTypeDisguised[t.Any]) -> BFType:
+def undisguise(x: FieldType[t.Any]) -> BFType:
     if isinstance(x, BFType):
         return x
 
@@ -198,45 +198,45 @@ def undisguise(x: BFTypeDisguised[t.Any]) -> BFType:
 def bits_field(
     n: int, *,
     default: t.Sequence[bool],
-) -> BFTypeDisguised[t.Tuple[bool, ...]]: ...
+) -> FieldType[t.Tuple[bool, ...]]: ...
 
 
 @t.overload
-def bits_field(n: int) -> BFTypeDisguised[t.Tuple[bool, ...]]: ...
+def bits_field(n: int) -> FieldType[t.Tuple[bool, ...]]: ...
 
 
-def bits_field(n: int, *, default: t.Sequence[bool] | NotProvided = NOT_PROVIDED) -> BFTypeDisguised[t.Tuple[bool, ...]]:
+def bits_field(n: int, *, default: t.Sequence[bool] | NotProvided = NOT_PROVIDED) -> FieldType[t.Tuple[bool, ...]]:
     return disguise(BFBits(n, default))
 
 
 @t.overload
 def map_field(
-    field: BFTypeDisguised[_T],
+    field: FieldType[_T],
     vm: ValueMapper[_T, _P], *,
     default: _P,
-) -> BFTypeDisguised[_P]: ...
+) -> FieldType[_P]: ...
 
 
 @t.overload
 def map_field(
-    field: BFTypeDisguised[_T],
+    field: FieldType[_T],
     vm: ValueMapper[_T, _P],
-) -> BFTypeDisguised[_P]: ...
+) -> FieldType[_P]: ...
 
 
 def map_field(
-    field: BFTypeDisguised[_T],
+    field: FieldType[_T],
     vm: ValueMapper[_T, _P], *,
     default: _P | NotProvided = NOT_PROVIDED
-) -> BFTypeDisguised[_P]:
+) -> FieldType[_P]:
     return disguise(BFMap(undisguise(field), vm, default))
 
 
 def _bf_map_helper(
-    field: BFTypeDisguised[_T],
+    field: FieldType[_T],
     vm: ValueMapper[_T, _P], *,
     default: _P | NotProvided = NOT_PROVIDED
-) -> BFTypeDisguised[_P]:
+) -> FieldType[_P]:
     if is_provided(default):
         return map_field(field, vm, default=default)
     else:
@@ -244,14 +244,14 @@ def _bf_map_helper(
 
 
 @t.overload
-def uint_field(n: int, *, default: int) -> BFTypeDisguised[int]: ...
+def uint_field(n: int, *, default: int) -> FieldType[int]: ...
 
 
 @t.overload
-def uint_field(n: int) -> BFTypeDisguised[int]: ...
+def uint_field(n: int) -> FieldType[int]: ...
 
 
-def uint_field(n: int, *, default: int | NotProvided = NOT_PROVIDED) -> BFTypeDisguised[int]:
+def uint_field(n: int, *, default: int | NotProvided = NOT_PROVIDED) -> FieldType[int]:
     """ An unsigned integer field type.
 
     Args:
@@ -291,14 +291,14 @@ def uint_field(n: int, *, default: int | NotProvided = NOT_PROVIDED) -> BFTypeDi
 
 
 @t.overload
-def int_field(n: int, *, default: int) -> BFTypeDisguised[int]: ...
+def int_field(n: int, *, default: int) -> FieldType[int]: ...
 
 
 @t.overload
-def int_field(n: int) -> BFTypeDisguised[int]: ...
+def int_field(n: int) -> FieldType[int]: ...
 
 
-def int_field(n: int, *, default: int | NotProvided = NOT_PROVIDED) -> BFTypeDisguised[int]:
+def int_field(n: int, *, default: int | NotProvided = NOT_PROVIDED) -> FieldType[int]:
     """ A signed integer field type.
 
     Args:
@@ -357,14 +357,14 @@ def int_field(n: int, *, default: int | NotProvided = NOT_PROVIDED) -> BFTypeDis
 
 
 @t.overload
-def bool_field(*, default: bool) -> BFTypeDisguised[bool]: ...
+def bool_field(*, default: bool) -> FieldType[bool]: ...
 
 
 @t.overload
-def bool_field() -> BFTypeDisguised[bool]: ...
+def bool_field() -> FieldType[bool]: ...
 
 
-def bool_field(n: int = 1, *, default: bool | NotProvided = NOT_PROVIDED) -> BFTypeDisguised[bool]:
+def bool_field(n: int = 1, *, default: bool | NotProvided = NOT_PROVIDED) -> FieldType[bool]:
     """ A boolean field type.
 
     Args:
@@ -404,15 +404,15 @@ IntEnumT = t.TypeVar("IntEnumT", bound=IntEnum | IntFlag)
 
 @t.overload
 def uint_enum_field(enum: t.Type[IntEnumT], n: int, *,
-                    default: IntEnumT) -> BFTypeDisguised[IntEnumT]: ...
+                    default: IntEnumT) -> FieldType[IntEnumT]: ...
 
 
 @t.overload
 def uint_enum_field(enum: t.Type[IntEnumT],
-                    n: int) -> BFTypeDisguised[IntEnumT]: ...
+                    n: int) -> FieldType[IntEnumT]: ...
 
 
-def uint_enum_field(enum: t.Type[IntEnumT], n: int, *, default: IntEnumT | NotProvided = NOT_PROVIDED) -> BFTypeDisguised[IntEnumT]:
+def uint_enum_field(enum: t.Type[IntEnumT], n: int, *, default: IntEnumT | NotProvided = NOT_PROVIDED) -> FieldType[IntEnumT]:
     """ An unsigned integer enum field type.
 
     Args:
@@ -463,24 +463,24 @@ def uint_enum_field(enum: t.Type[IntEnumT], n: int, *, default: IntEnumT | NotPr
 
 @t.overload
 def list_field(
-    item: t.Type[_T] | BFTypeDisguised[_T],
+    item: t.Type[_T] | FieldType[_T],
     n_items: int, *,
     default: t.List[_T]
-) -> BFTypeDisguised[t.List[_T]]: ...
+) -> FieldType[t.List[_T]]: ...
 
 
 @t.overload
 def list_field(
-    item: t.Type[_T] | BFTypeDisguised[_T],
+    item: t.Type[_T] | FieldType[_T],
     n_items: int
-) -> BFTypeDisguised[t.List[_T]]: ...
+) -> FieldType[t.List[_T]]: ...
 
 
 def list_field(
-    item: t.Type[_T] | BFTypeDisguised[_T],
+    item: t.Type[_T] | FieldType[_T],
     n_items: int, *,
     default: t.List[_T] | NotProvided = NOT_PROVIDED
-) -> BFTypeDisguised[t.List[_T]]:
+) -> FieldType[t.List[_T]]:
 
     if is_provided(default) and len(default) != n_items:
         raise ValueError(
@@ -494,23 +494,23 @@ _LiteralT = t.TypeVar("_LiteralT", bound=str | int | float | bytes | Enum)
 _IntLiteralT = t.TypeVar("_IntLiteralT", bound=int)
 
 
-def lit_field(field: BFTypeDisguised[_LiteralT], *, default: _P) -> BFTypeDisguised[_P]:
+def lit_field(field: FieldType[_LiteralT], *, default: _P) -> FieldType[_P]:
     return disguise(BFLit(undisguise(field), default))
 
 
-def lit_uint_field(n: int, *, default: _IntLiteralT) -> BFTypeDisguised[_IntLiteralT]:
+def lit_uint_field(n: int, *, default: _IntLiteralT) -> FieldType[_IntLiteralT]:
     return lit_field(uint_field(n), default=default)
 
 
 @t.overload
-def bytes_field(n_bytes: int, *, default: bytes) -> BFTypeDisguised[bytes]: ...
+def bytes_field(n_bytes: int, *, default: bytes) -> FieldType[bytes]: ...
 
 
 @t.overload
-def bytes_field(n_bytes: int) -> BFTypeDisguised[bytes]: ...
+def bytes_field(n_bytes: int) -> FieldType[bytes]: ...
 
 
-def bytes_field(n_bytes: int, *, default: bytes | NotProvided = NOT_PROVIDED) -> BFTypeDisguised[bytes]:
+def bytes_field(n_bytes: int, *, default: bytes | NotProvided = NOT_PROVIDED) -> FieldType[bytes]:
     """ A bytes field type.
 
     Args:
@@ -559,15 +559,15 @@ def str_field(
     n_bytes: int,
     encoding: str = "utf-8", *,
     default: str,
-) -> BFTypeDisguised[str]: ...
+) -> FieldType[str]: ...
 
 
 @t.overload
 def str_field(
-    n_bytes: int, encoding: str = "utf-8") -> BFTypeDisguised[str]: ...
+    n_bytes: int, encoding: str = "utf-8") -> FieldType[str]: ...
 
 
-def str_field(n_bytes: int, encoding: str = "utf-8", *, default: str | NotProvided = NOT_PROVIDED) -> BFTypeDisguised[str]:
+def str_field(n_bytes: int, encoding: str = "utf-8", *, default: str | NotProvided = NOT_PROVIDED) -> FieldType[str]:
     """ A string field type.
 
     Args:
@@ -614,36 +614,36 @@ def str_field(n_bytes: int, encoding: str = "utf-8", *, default: str | NotProvid
 
 @t.overload
 def dynamic_field(
-    fn: t.Callable[[t.Any], t.Type[_T] | BFTypeDisguised[_T]] |
-    t.Callable[[t.Any, int], t.Type[_T] | BFTypeDisguised[_T]], *,
+    fn: t.Callable[[t.Any], t.Type[_T] | FieldType[_T]] |
+    t.Callable[[t.Any, int], t.Type[_T] | FieldType[_T]], *,
     default: _T
-) -> BFTypeDisguised[_T]: ...
+) -> FieldType[_T]: ...
 
 
 @t.overload
 def dynamic_field(
-    fn: t.Callable[[t.Any], t.Type[_T] | BFTypeDisguised[_T]] |
-    t.Callable[[t.Any, int], t.Type[_T] | BFTypeDisguised[_T]]
-) -> BFTypeDisguised[_T]: ...
+    fn: t.Callable[[t.Any], t.Type[_T] | FieldType[_T]] |
+    t.Callable[[t.Any, int], t.Type[_T] | FieldType[_T]]
+) -> FieldType[_T]: ...
 
 
 def dynamic_field(
-    fn: t.Callable[[t.Any], t.Type[_T] | BFTypeDisguised[_T]] |
-        t.Callable[[t.Any, int], t.Type[_T] | BFTypeDisguised[_T]], *,
+    fn: t.Callable[[t.Any], t.Type[_T] | FieldType[_T]] |
+        t.Callable[[t.Any, int], t.Type[_T] | FieldType[_T]], *,
     default: _T | NotProvided = NOT_PROVIDED
-) -> BFTypeDisguised[_T]:
+) -> FieldType[_T]:
     n_params = len(inspect.signature(fn).parameters)
     match n_params:
         case 1:
             fn = t.cast(
-                t.Callable[[t.Any], t.Type[_T] | BFTypeDisguised[_T]],
+                t.Callable[[t.Any], t.Type[_T] | FieldType[_T]],
                 fn
             )
             return disguise(BFDynSelf(fn, default))
         case 2:
             fn = t.cast(
                 t.Callable[
-                    [t.Any, int], t.Type[_T] | BFTypeDisguised[_T]
+                    [t.Any, int], t.Type[_T] | FieldType[_T]
                 ], fn
             )
             return disguise(BFDynSelfN(fn, default))
@@ -652,14 +652,14 @@ def dynamic_field(
 
 
 @t.overload
-def none_field(*, default: None) -> BFTypeDisguised[None]: ...
+def none_field(*, default: None) -> FieldType[None]: ...
 
 
 @t.overload
-def none_field() -> BFTypeDisguised[None]: ...
+def none_field() -> FieldType[None]: ...
 
 
-def none_field(*, default: None | NotProvided = NOT_PROVIDED) -> BFTypeDisguised[None]:
+def none_field(*, default: None | NotProvided = NOT_PROVIDED) -> FieldType[None]:
     """ A field type that represents no data.
 
     This field type is most useful when paired with `dynamic_field` to create
@@ -694,20 +694,20 @@ def none_field(*, default: None | NotProvided = NOT_PROVIDED) -> BFTypeDisguised
 def bitfield_field(
     cls: t.Type[BitfieldT], n: int, *,
     default: BitfieldT
-) -> BFTypeDisguised[BitfieldT]: ...
+) -> FieldType[BitfieldT]: ...
 
 
 @t.overload
 def bitfield_field(
     cls: t.Type[BitfieldT], n: int
-) -> BFTypeDisguised[BitfieldT]: ...
+) -> FieldType[BitfieldT]: ...
 
 
 def bitfield_field(
     cls: t.Type[BitfieldT],
     n: int, *,
     default: BitfieldT | NotProvided = NOT_PROVIDED
-) -> BFTypeDisguised[BitfieldT]:
+) -> FieldType[BitfieldT]:
     return disguise(BFBitfield(cls, n, default=default))
 
 
