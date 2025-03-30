@@ -100,12 +100,12 @@ class BFMap(t.NamedTuple):
 
 
 class BFDynSelf(t.NamedTuple):
-    fn: t.Callable[[t.Any], FieldType[t.Any]]
+    fn: t.Callable[[t.Any], Field[t.Any]]
     default: t.Any | NotProvided
 
 
 class BFDynSelfN(t.NamedTuple):
-    fn: t.Callable[[t.Any, int], FieldType[t.Any]]
+    fn: t.Callable[[t.Any, int], Field[t.Any]]
     default: t.Any | NotProvided
 
 
@@ -165,14 +165,14 @@ def bftype_has_children_with_default(bftype: BFType) -> bool:
             return is_provided(inner.default) or bftype_has_children_with_default(inner)
 
 
-FieldType = t.Annotated[_T, "BFTypeDisguised"]
+Field = t.Annotated[_T, "BFTypeDisguised"]
 
 
-def disguise(x: BFType) -> FieldType[t.Any]:
+def disguise(x: BFType) -> Field[t.Any]:
     return x  # type: ignore
 
 
-def undisguise(x: FieldType[t.Any]) -> BFType:
+def undisguise(x: Field[t.Any]) -> BFType:
     if isinstance(x, BFType):
         return x
 
@@ -199,45 +199,45 @@ def undisguise(x: FieldType[t.Any]) -> BFType:
 def bits_field(
     n: int, *,
     default: t.Sequence[bool],
-) -> FieldType[t.Tuple[bool, ...]]: ...
+) -> Field[t.Tuple[bool, ...]]: ...
 
 
 @t.overload
-def bits_field(n: int) -> FieldType[t.Tuple[bool, ...]]: ...
+def bits_field(n: int) -> Field[t.Tuple[bool, ...]]: ...
 
 
-def bits_field(n: int, *, default: t.Sequence[bool] | ellipsis = ...) -> FieldType[t.Tuple[bool, ...]]:
+def bits_field(n: int, *, default: t.Sequence[bool] | ellipsis = ...) -> Field[t.Tuple[bool, ...]]:
     return disguise(BFBits(n, ellipsis_to_not_provided(default)))
 
 
 @t.overload
 def map_field(
-    field: FieldType[_T],
+    field: Field[_T],
     vm: ValueMapper[_T, _P], *,
     default: _P,
-) -> FieldType[_P]: ...
+) -> Field[_P]: ...
 
 
 @t.overload
 def map_field(
-    field: FieldType[_T],
+    field: Field[_T],
     vm: ValueMapper[_T, _P],
-) -> FieldType[_P]: ...
+) -> Field[_P]: ...
 
 
 def map_field(
-    field: FieldType[_T],
+    field: Field[_T],
     vm: ValueMapper[_T, _P], *,
     default: _P | ellipsis = ...
-) -> FieldType[_P]:
+) -> Field[_P]:
     return disguise(BFMap(undisguise(field), vm, ellipsis_to_not_provided(default)))
 
 
 def _bf_map_helper(
-    field: FieldType[_T],
+    field: Field[_T],
     vm: ValueMapper[_T, _P], *,
     default: _P | NotProvided = NOT_PROVIDED,
-) -> FieldType[_P]:
+) -> Field[_P]:
     if is_provided(default):
         return map_field(field, vm, default=default)
     else:
@@ -245,14 +245,14 @@ def _bf_map_helper(
 
 
 @t.overload
-def uint_field(n: int, *, default: int) -> FieldType[int]: ...
+def uint_field(n: int, *, default: int) -> Field[int]: ...
 
 
 @t.overload
-def uint_field(n: int) -> FieldType[int]: ...
+def uint_field(n: int) -> Field[int]: ...
 
 
-def uint_field(n: int, *, default: int | ellipsis = ...) -> FieldType[int]:
+def uint_field(n: int, *, default: int | ellipsis = ...) -> Field[int]:
     """ An unsigned integer field type.
 
     Args:
@@ -260,7 +260,7 @@ def uint_field(n: int, *, default: int | ellipsis = ...) -> FieldType[int]:
         default (int): An optional default value to use when constructing the field in a new object.
 
     Returns:
-        FieldType[int]: A field type that represents an unsigned integer.
+        Field[int]: A field that represents an unsigned integer.
 
     Example:
         ```python
@@ -298,14 +298,14 @@ def uint_field(n: int, *, default: int | ellipsis = ...) -> FieldType[int]:
 
 
 @t.overload
-def int_field(n: int, *, default: int) -> FieldType[int]: ...
+def int_field(n: int, *, default: int) -> Field[int]: ...
 
 
 @t.overload
-def int_field(n: int) -> FieldType[int]: ...
+def int_field(n: int) -> Field[int]: ...
 
 
-def int_field(n: int, *, default: int | ellipsis = ...) -> FieldType[int]:
+def int_field(n: int, *, default: int | ellipsis = ...) -> Field[int]:
     """ A signed integer field type.
 
     Args:
@@ -313,7 +313,7 @@ def int_field(n: int, *, default: int | ellipsis = ...) -> FieldType[int]:
         default (int): An optional default value to use when constructing the field in a new object.
 
     Returns:
-        FieldType[int]: A field type that represents a signed integer.
+        Field[int]: A field that represents a signed integer.
 
     Example:
         ```python
@@ -367,14 +367,14 @@ def int_field(n: int, *, default: int | ellipsis = ...) -> FieldType[int]:
 
 
 @t.overload
-def bool_field(*, default: bool) -> FieldType[bool]: ...
+def bool_field(*, default: bool) -> Field[bool]: ...
 
 
 @t.overload
-def bool_field() -> FieldType[bool]: ...
+def bool_field() -> Field[bool]: ...
 
 
-def bool_field(n: int = 1, *, default: bool | ellipsis = ...) -> FieldType[bool]:
+def bool_field(n: int = 1, *, default: bool | ellipsis = ...) -> Field[bool]:
     """ A boolean field type. (Bit flag)
 
     Args:
@@ -382,7 +382,7 @@ def bool_field(n: int = 1, *, default: bool | ellipsis = ...) -> FieldType[bool]
         default (bool): An optional default value to use when constructing the field in a new object.
 
     Returns:
-        FieldType[bool]: A field type that represents a boolean.
+        Field[bool]: A field that represents a boolean.
 
     Example:
         ```python
@@ -420,15 +420,15 @@ IntEnumT = t.TypeVar("IntEnumT", bound=IntEnum | IntFlag)
 
 @t.overload
 def uint_enum_field(enum: t.Type[IntEnumT], n: int, *,
-                    default: IntEnumT) -> FieldType[IntEnumT]: ...
+                    default: IntEnumT) -> Field[IntEnumT]: ...
 
 
 @t.overload
 def uint_enum_field(enum: t.Type[IntEnumT],
-                    n: int) -> FieldType[IntEnumT]: ...
+                    n: int) -> Field[IntEnumT]: ...
 
 
-def uint_enum_field(enum: t.Type[IntEnumT], n: int, *, default: IntEnumT | ellipsis = ...) -> FieldType[IntEnumT]:
+def uint_enum_field(enum: t.Type[IntEnumT], n: int, *, default: IntEnumT | ellipsis = ...) -> Field[IntEnumT]:
     """ An unsigned integer enum field type.
 
     Args:
@@ -438,7 +438,7 @@ def uint_enum_field(enum: t.Type[IntEnumT], n: int, *, default: IntEnumT | ellip
             (Must match the enum type passed in the `enum` arg).
 
     Returns:
-        FieldType[IntEnumT]: A field type that represents an unsigned integer enum.
+        Field[IntEnumT]: A field that represents an unsigned integer enum.
 
     Example:
         ```python
@@ -479,24 +479,24 @@ def uint_enum_field(enum: t.Type[IntEnumT], n: int, *, default: IntEnumT | ellip
 
 @t.overload
 def list_field(
-    item: t.Type[_T] | FieldType[_T],
+    item: t.Type[_T] | Field[_T],
     n_items: int, *,
     default: t.List[_T]
-) -> FieldType[t.List[_T]]: ...
+) -> Field[t.List[_T]]: ...
 
 
 @t.overload
 def list_field(
-    item: t.Type[_T] | FieldType[_T],
+    item: t.Type[_T] | Field[_T],
     n_items: int
-) -> FieldType[t.List[_T]]: ...
+) -> Field[t.List[_T]]: ...
 
 
 def list_field(
-    item: t.Type[_T] | FieldType[_T],
+    item: t.Type[_T] | Field[_T],
     n_items: int, *,
     default: t.List[_T] | ellipsis = ...
-) -> FieldType[t.List[_T]]:
+) -> Field[t.List[_T]]:
 
     d = ellipsis_to_not_provided(default)
 
@@ -512,23 +512,23 @@ _LiteralT = t.TypeVar("_LiteralT", bound=str | int | float | bytes | Enum)
 _IntLiteralT = t.TypeVar("_IntLiteralT", bound=int)
 
 
-def lit_field(field: FieldType[_LiteralT], *, default: _P) -> FieldType[_P]:
+def lit_field(field: Field[_LiteralT], *, default: _P) -> Field[_P]:
     return disguise(BFLit(undisguise(field), default))
 
 
-def lit_uint_field(n: int, *, default: _IntLiteralT) -> FieldType[_IntLiteralT]:
+def lit_uint_field(n: int, *, default: _IntLiteralT) -> Field[_IntLiteralT]:
     return lit_field(uint_field(n), default=default)
 
 
 @t.overload
-def bytes_field(n_bytes: int, *, default: bytes) -> FieldType[bytes]: ...
+def bytes_field(n_bytes: int, *, default: bytes) -> Field[bytes]: ...
 
 
 @t.overload
-def bytes_field(n_bytes: int) -> FieldType[bytes]: ...
+def bytes_field(n_bytes: int) -> Field[bytes]: ...
 
 
-def bytes_field(n_bytes: int, *, default: bytes | ellipsis = ...) -> FieldType[bytes]:
+def bytes_field(n_bytes: int, *, default: bytes | ellipsis = ...) -> Field[bytes]:
     """ A bytes field type.
 
     Args:
@@ -536,7 +536,7 @@ def bytes_field(n_bytes: int, *, default: bytes | ellipsis = ...) -> FieldType[b
         default (bytes): An optional default value to use when constructing the field in a new object.
 
     Returns:
-        FieldType[bytes]: A field type that represents a sequence of bytes.
+        Field[bytes]: A field that represents a sequence of bytes.
 
     Example:
         ```python
@@ -580,15 +580,15 @@ def str_field(
     n_bytes: int,
     encoding: str = "utf-8", *,
     default: str,
-) -> FieldType[str]: ...
+) -> Field[str]: ...
 
 
 @t.overload
 def str_field(
-    n_bytes: int, encoding: str = "utf-8") -> FieldType[str]: ...
+    n_bytes: int, encoding: str = "utf-8") -> Field[str]: ...
 
 
-def str_field(n_bytes: int, encoding: str = "utf-8", *, default: str | ellipsis = ...) -> FieldType[str]:
+def str_field(n_bytes: int, encoding: str = "utf-8", *, default: str | ellipsis = ...) -> Field[str]:
     """ A string field type.
 
     Args:
@@ -597,7 +597,7 @@ def str_field(n_bytes: int, encoding: str = "utf-8", *, default: str | ellipsis 
         default (str): An optional default value to use when constructing the field in a new object.
 
     Returns:
-        FieldType[str]: A field type that represents a string.
+        Field[str]: A field that represents a string.
 
     Example:
         ```python
@@ -640,36 +640,36 @@ def str_field(n_bytes: int, encoding: str = "utf-8", *, default: str | ellipsis 
 
 @t.overload
 def dynamic_field(
-    fn: t.Callable[[t.Any], t.Type[_T] | FieldType[_T]] |
-    t.Callable[[t.Any, int], t.Type[_T] | FieldType[_T]], *,
+    fn: t.Callable[[t.Any], t.Type[_T] | Field[_T]] |
+    t.Callable[[t.Any, int], t.Type[_T] | Field[_T]], *,
     default: _T
-) -> FieldType[_T]: ...
+) -> Field[_T]: ...
 
 
 @t.overload
 def dynamic_field(
-    fn: t.Callable[[t.Any], t.Type[_T] | FieldType[_T]] |
-    t.Callable[[t.Any, int], t.Type[_T] | FieldType[_T]]
-) -> FieldType[_T]: ...
+    fn: t.Callable[[t.Any], t.Type[_T] | Field[_T]] |
+    t.Callable[[t.Any, int], t.Type[_T] | Field[_T]]
+) -> Field[_T]: ...
 
 
 def dynamic_field(
-    fn: t.Callable[[t.Any], t.Type[_T] | FieldType[_T]] |
-        t.Callable[[t.Any, int], t.Type[_T] | FieldType[_T]], *,
+    fn: t.Callable[[t.Any], t.Type[_T] | Field[_T]] |
+        t.Callable[[t.Any, int], t.Type[_T] | Field[_T]], *,
     default: _T | ellipsis = ...
-) -> FieldType[_T]:
+) -> Field[_T]:
     n_params = len(inspect.signature(fn).parameters)
     match n_params:
         case 1:
             fn = t.cast(
-                t.Callable[[t.Any], t.Type[_T] | FieldType[_T]],
+                t.Callable[[t.Any], t.Type[_T] | Field[_T]],
                 fn
             )
             return disguise(BFDynSelf(fn, default))
         case 2:
             fn = t.cast(
                 t.Callable[
-                    [t.Any, int], t.Type[_T] | FieldType[_T]
+                    [t.Any, int], t.Type[_T] | Field[_T]
                 ], fn
             )
             return disguise(BFDynSelfN(fn, default))
@@ -678,14 +678,14 @@ def dynamic_field(
 
 
 @t.overload
-def none_field(*, default: None) -> FieldType[None]: ...
+def none_field(*, default: None) -> Field[None]: ...
 
 
 @t.overload
-def none_field() -> FieldType[None]: ...
+def none_field() -> Field[None]: ...
 
 
-def none_field(*, default: None | ellipsis = ...) -> FieldType[None]:
+def none_field(*, default: None | ellipsis = ...) -> Field[None]:
     """ A field type that represents no data.
 
     This field type is most useful when paired with `dynamic_field` to create
@@ -697,7 +697,7 @@ def none_field(*, default: None | ellipsis = ...) -> FieldType[None]:
             field.)
 
     Returns:
-        FieldType[None]: A field type that represents no data.
+        Field[None]: A field that represents no data.
 
     Example:
         ```python
@@ -722,20 +722,20 @@ def none_field(*, default: None | ellipsis = ...) -> FieldType[None]:
 def bitfield_field(
     cls: t.Type[BitfieldT], n: int, *,
     default: BitfieldT
-) -> FieldType[BitfieldT]: ...
+) -> Field[BitfieldT]: ...
 
 
 @t.overload
 def bitfield_field(
     cls: t.Type[BitfieldT], n: int
-) -> FieldType[BitfieldT]: ...
+) -> Field[BitfieldT]: ...
 
 
 def bitfield_field(
     cls: t.Type[BitfieldT],
     n: int, *,
     default: BitfieldT | ellipsis = ...
-) -> FieldType[BitfieldT]:
+) -> Field[BitfieldT]:
     return disguise(BFBitfield(cls, n, default=ellipsis_to_not_provided(default)))
 
 
