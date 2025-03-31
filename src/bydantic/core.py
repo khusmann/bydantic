@@ -187,7 +187,7 @@ def undisguise(x: Field[t.Any]) -> BFType:
             return undisguise(bool_field())
 
     if isinstance(x, bytes):
-        return undisguise(lit_field(bytes_field(len(x)), default=x))
+        return undisguise(lit_field(bytes_field(n_bytes=len(x)), default=x))
 
     if x is None:
         return undisguise(none_field())
@@ -520,14 +520,14 @@ def lit_uint_field(n: int, *, default: _IntLiteralT) -> Field[_IntLiteralT]:
 
 
 @t.overload
-def bytes_field(n_bytes: int, *, default: bytes) -> Field[bytes]: ...
+def bytes_field(*, n_bytes: int, default: bytes) -> Field[bytes]: ...
 
 
 @t.overload
-def bytes_field(n_bytes: int) -> Field[bytes]: ...
+def bytes_field(*, n_bytes: int) -> Field[bytes]: ...
 
 
-def bytes_field(n_bytes: int, *, default: bytes | ellipsis = ...) -> Field[bytes]:
+def bytes_field(*, n_bytes: int, default: bytes | ellipsis = ...) -> Field[bytes]:
     """ A bytes field type.
 
     Args:
@@ -576,18 +576,20 @@ def bytes_field(n_bytes: int, *, default: bytes | ellipsis = ...) -> Field[bytes
 
 @t.overload
 def str_field(
+    *,
     n_bytes: int,
-    encoding: str = "utf-8", *,
+    encoding: str = "utf-8",
     default: str,
 ) -> Field[str]: ...
 
 
 @t.overload
 def str_field(
+    *,
     n_bytes: int, encoding: str = "utf-8") -> Field[str]: ...
 
 
-def str_field(n_bytes: int, encoding: str = "utf-8", *, default: str | ellipsis = ...) -> Field[str]:
+def str_field(*, n_bytes: int, encoding: str = "utf-8", default: str | ellipsis = ...) -> Field[str]:
     """ A string field type.
 
     Args:
@@ -634,7 +636,7 @@ def str_field(n_bytes: int, encoding: str = "utf-8", *, default: str | ellipsis 
         def back(self, y: str) -> bytes:
             return y.ljust(n_bytes, "\0").encode(encoding)
 
-    return _bf_map_helper(bytes_field(n_bytes), BytesAsStr(), default=d)
+    return _bf_map_helper(bytes_field(n_bytes=n_bytes), BytesAsStr(), default=d)
 
 
 @t.overload

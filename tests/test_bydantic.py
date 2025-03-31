@@ -18,8 +18,8 @@ def test_basic():
     class Work(bd.Bitfield):
         a: int = bd.uint_field(4)
         b: t.List[int] = bd.list_field(bd.uint_field(3), 4)
-        c: str = bd.str_field(3)
-        d: bytes = bd.bytes_field(4)
+        c: str = bd.str_field(n_bytes=3)
+        d: bytes = bd.bytes_field(n_bytes=4)
 
     work = Work(a=1, b=[1, 2, 3, 4], c="abc", d=b"abcd")
     assert work.to_bytes() == b'\x12\x9cabcabcd'
@@ -28,7 +28,7 @@ def test_basic():
 
 def test_str_field():
     class Work(bd.Bitfield):
-        a: str = bd.str_field(8)
+        a: str = bd.str_field(n_bytes=8)
 
     work = Work(a="hello")
     assert work.to_bytes() == b'hello\x00\x00\x00'
@@ -73,8 +73,8 @@ def test_basic_subclasses():
         b: t.List[int] = bd.list_field(bd.uint_field(3), 4)
 
     class Work2(Work):
-        c: str = bd.str_field(3)
-        d: bytes = bd.bytes_field(4)
+        c: str = bd.str_field(n_bytes=3)
+        d: bytes = bd.bytes_field(n_bytes=4)
 
     work = Work(a=1, b=[1, 2, 3, 4])
     assert work.to_bytes() == b'\x12\x9c'
@@ -89,8 +89,8 @@ def test_basic_reorder():
     class Work(bd.Bitfield):
         a: int = bd.uint_field(4)
         b: t.List[int] = bd.list_field(bd.uint_field(3), 4)
-        c: str = bd.str_field(3)
-        d: bytes = bd.bytes_field(4)
+        c: str = bd.str_field(n_bytes=3)
+        d: bytes = bd.bytes_field(n_bytes=4)
 
         bitfield_config = bd.BitfieldConfig(
             reorder_bits=[*range(56, 56+16)]
@@ -137,12 +137,14 @@ def test_kitchen_sink():
         ab: int = bd.uint_field(10)
         ac: int = bd.uint_field(2)
         zz: BarEnum = bd.uint_enum_field(BarEnum, 2)
-        yy: bytes = bd.bytes_field(2)
+        yy: bytes = bd.bytes_field(n_bytes=2)
         ad: int = bd.uint_field(3)
         c: t.Literal[10] | list[float] | Baz = bd.dynamic_field(foo)
         d: t.List[int] = bd.list_field(bd.uint_field(10), 3)
         e: t.List[Baz] = bd.list_field(Baz, 3)
-        f: t.Literal["Hello"] = bd.lit_field(bd.str_field(5), default="Hello")
+        f: t.Literal["Hello"] = bd.lit_field(
+            bd.str_field(n_bytes=5), default="Hello"
+        )
         h: t.Literal[b"Hello"] = b"Hello"
         g: t.List[t.List[int]] = bd.list_field(
             bd.list_field(bd.uint_field(10), 3), 3)
@@ -169,9 +171,11 @@ def test_kitchen_sink():
 
 def test_default_len_err():
     class Work(bd.Bitfield):
-        a: str = bd.str_field(4, default="ทt")
-        b: bytes = bd.bytes_field(3, default=b"abc")
-        c: t.Literal["ทt"] = bd.lit_field(bd.str_field(4), default="ทt")
+        a: str = bd.str_field(n_bytes=4, default="ทt")
+        b: bytes = bd.bytes_field(n_bytes=3, default=b"abc")
+        c: t.Literal["ทt"] = bd.lit_field(
+            bd.str_field(n_bytes=4), default="ทt"
+        )
         d: t.List[int] = bd.list_field(
             bd.uint_field(3), 4, default=[1, 2, 3, 4])
 
@@ -179,12 +183,12 @@ def test_default_len_err():
 
     with pytest.raises(ValueError, match=re.escape("expected default string of maximum length 3 bytes, got 4 bytes ('ทt')")):
         class Fail1(bd.Bitfield):
-            a: str = bd.str_field(3, default="ทt")
+            a: str = bd.str_field(n_bytes=3, default="ทt")
         print(Fail1)
 
     with pytest.raises(ValueError, match=re.escape("expected default bytes of length 4 bytes, got 3 bytes (b'abc')")):
         class Fail2(bd.Bitfield):
-            a: bytes = bd.bytes_field(4, default=b"abc")
+            a: bytes = bd.bytes_field(n_bytes=4, default=b"abc")
         print(Fail2)
 
     with pytest.raises(ValueError, match=re.escape("expected default list of length 4, got 3 ([1, 2, 3])")):
@@ -258,7 +262,7 @@ def test_dyn_error():
     class Foo(bd.Bitfield):
         a: int = bd.uint_field(8)
         b: int | str = bd.dynamic_field(
-            lambda x: bd.uint_field(8) if x.a == 0 else bd.str_field(1)
+            lambda x: bd.uint_field(8) if x.a == 0 else bd.str_field(n_bytes=1)
         )
 
     Foo(a=0, b=1).to_bits()
@@ -304,7 +308,7 @@ def test_context():
         if x.bitfield_context.a:
             return bd.uint_field(8)
         else:
-            return bd.str_field(1)
+            return bd.str_field(n_bytes=1)
 
     class Foo(bd.Bitfield[Ctx]):
         a: int | str = bd.dynamic_field(foo_disc)
