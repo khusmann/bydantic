@@ -832,18 +832,22 @@ class BitfieldConfig:
 @dataclass_transform(
     kw_only_default=True,
     field_specifiers=(
-        bits_field,
-        map_field,
         uint_field,
+        int_field,
         bool_field,
-        uint_enum_field,
-        bitfield_field,
-        list_field,
-        lit_field,
-        lit_uint_field,
         bytes_field,
         str_field,
+        uint_enum_field,
+        int_enum_field,
+        none_field,
+        bits_field,
+        bitfield_field,
+        lit_field,
+        lit_uint_field,
+        lit_int_field,
+        list_field,
         dynamic_field,
+        map_field,
     )
 )
 class Bitfield(t.Generic[ContextT]):
