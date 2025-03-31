@@ -834,6 +834,8 @@ class BitfieldConfig:
     field_specifiers=(
         uint_field,
         int_field,
+        lit_uint_field,
+        lit_int_field,
         bool_field,
         bytes_field,
         str_field,
@@ -843,8 +845,6 @@ class BitfieldConfig:
         bits_field,
         bitfield_field,
         lit_field,
-        lit_uint_field,
-        lit_int_field,
         list_field,
         dynamic_field,
         map_field,
