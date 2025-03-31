@@ -571,16 +571,16 @@ def list_field(
     return disguise(BFList(undisguise(item), n_items, d))
 
 
-_LiteralT = t.TypeVar("_LiteralT", bound=str | int | float | bytes | Enum)
+LiteralT = t.TypeVar("LiteralT", bound=str | int | float | bytes | Enum)
 
-_IntLiteralT = t.TypeVar("_IntLiteralT", bound=int)
+LiteralIntT = t.TypeVar("LiteralIntT", bound=int)
 
 
-def lit_field(field: Field[_LiteralT], *, default: _P) -> Field[_P]:
+def lit_field(field: Field[LiteralT], *, default: _P) -> Field[_P]:
     return disguise(BFLit(undisguise(field), default))
 
 
-def lit_uint_field(n: int, *, default: _IntLiteralT) -> Field[_IntLiteralT]:
+def lit_uint_field(n: int, *, default: LiteralIntT) -> Field[LiteralIntT]:
     if default < 0:
         raise ValueError(
             f"expected default to be non-negative, got {default}"
@@ -592,7 +592,7 @@ def lit_uint_field(n: int, *, default: _IntLiteralT) -> Field[_IntLiteralT]:
     return lit_field(uint_field(n), default=default)
 
 
-def lit_int_field(n: int, *, default: _IntLiteralT) -> Field[_IntLiteralT]:
+def lit_int_field(n: int, *, default: LiteralIntT) -> Field[LiteralIntT]:
     if is_int_too_big(default, n, signed=True):
         raise ValueError(
             f"expected signed default to fit in {n} bits, got {default}"
