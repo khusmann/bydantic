@@ -5,10 +5,10 @@ repo_url: https://github.com/khusmann/bydantic
 nav:
   - Welcome to bydantic: index.md
   - Getting Started: getting-started.md
-  - Basic Field Types: basic-field-types.md
-  - Field Type Combinators: field-type-combinators.md
   - Serialization & Deserialization Context: serialization-deserialization-context.md
   - Bitfield Reordering / Alignment: bitfield-reordering-alignment.md
+  - Field Type Reference: field-type-reference.md
+  - Bitfield Class Reference: bitfield-class-reference.md
 
 theme:
   name: material

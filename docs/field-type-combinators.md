@@ -1,3 +1,0 @@
-# Field Type Combinators
-
-Coming soon...

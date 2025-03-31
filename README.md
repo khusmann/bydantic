@@ -94,9 +94,9 @@ This just scratches the surface of what bydantic can do... continue reading
 
 ## Features
 
-- [Basic field types](https://kylehusmann.com/bydantic/basic-field-types) (e.g.
-  `int_field`, `str_field`, `bytes_field`, `lit_field`, etc.)
-- [Field type combinators](https://kylehusmann.com/bydantic/field-type-combinators)
+- [Field type primitives](https://kylehusmann.com/bydantic/field-type-reference#field-type-primitives)
+  (e.g. `int_field`, `str_field`, `bytes_field`, `lit_field`, etc.)
+- [Field type combinators](https://kylehusmann.com/bydantic/field-type-reference#field-type-combinators)
   (e.g. `list_field`, `dynamic_field`, `map_field`, etc.)
 - [Serialization & Deserialization context](https://kylehusmann.com/bydantic/serialization-deserialization-context)
 - [Bitfield reordering / alignment](https://kylehusmann.com/bydantic/bitfield-reordering-alignment)
