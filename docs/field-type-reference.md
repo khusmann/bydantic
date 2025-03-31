@@ -10,6 +10,10 @@ constructed via [field type combinators](#field-type-combinators).
 
 ### ::: bydantic.int_field
 
+### ::: bydantic.lit_uint_field
+
+### ::: bydantic.lit_int_field
+
 ### ::: bydantic.bool_field
 
 ### ::: bydantic.bytes_field

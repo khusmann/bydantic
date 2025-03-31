@@ -529,14 +529,14 @@ def uint_enum_field(n: int, enum: t.Type[IntEnumT], *, default: IntEnumT | ellip
 
         foo = Foo(a=Color.RED, b=Color.BLUE)
         print(foo) # Foo(a=<Color.RED: 1>, b=<Color.BLUE: 3>)
-        print(foo.to_bytes()) # b'\x13'
+        print(foo.to_bytes()) # b'\\x13'
 
-        foo2 = Foo.from_bytes_exact(b'\x24')
+        foo2 = Foo.from_bytes_exact(b'\\x24')
         print(foo2) # Foo(a=<Color.GREEN: 2>, b=<Color.PURPLE: 4>)
 
         foo3 = Foo(a = Color.RED) # b is set to Color.GREEN by default
         print(foo3) # Foo(a=<Color.RED: 1>, b=<Color.GREEN: 2>)
-        print(foo3.to_bytes()) # b'\x12'
+        print(foo3.to_bytes()) # b'\\x12'
         ```
     """
 
@@ -598,7 +598,7 @@ def int_enum_field(n: int, enum: t.Type[IntEnumT], *, default: IntEnumT | ellips
         print(foo) # Foo(a=<Color.RED: -2>, b=<Color.BLUE: 0>)
         print(foo.to_bytes()) # b'\\xe0'
 
-        foo2 = Foo.from_bytes_exact(b'\xfe')
+        foo2 = Foo.from_bytes_exact(b'\\xfe')
         print(foo2) # Foo(a=<Color.GREEN: -1>, b=<Color.RED: -2>)
         ```
     """
@@ -610,6 +610,26 @@ def int_enum_field(n: int, enum: t.Type[IntEnumT], *, default: IntEnumT | ellips
             return y.value
 
     return _bf_map_helper(int_field(n), IntAsEnum(), default=ellipsis_to_not_provided(default))
+
+
+def lit_uint_field(n: int, *, default: LiteralIntT) -> Field[LiteralIntT]:
+    if default < 0:
+        raise ValueError(
+            f"expected default to be non-negative, got {default}"
+        )
+    if is_int_too_big(default, n, signed=False):
+        raise ValueError(
+            f"expected default to fit in {n} bits, got {default}"
+        )
+    return lit_field(uint_field(n), default=default)
+
+
+def lit_int_field(n: int, *, default: LiteralIntT) -> Field[LiteralIntT]:
+    if is_int_too_big(default, n, signed=True):
+        raise ValueError(
+            f"expected signed default to fit in {n} bits, got {default}"
+        )
+    return lit_field(int_field(n), default=default)
 
 
 @t.overload
@@ -726,26 +746,6 @@ LiteralIntT = t.TypeVar("LiteralIntT", bound=int)
 
 def lit_field(field: Field[LiteralT], *, default: _P) -> Field[_P]:
     return disguise(BFLit(undisguise(field), default))
-
-
-def lit_uint_field(n: int, *, default: LiteralIntT) -> Field[LiteralIntT]:
-    if default < 0:
-        raise ValueError(
-            f"expected default to be non-negative, got {default}"
-        )
-    if is_int_too_big(default, n, signed=False):
-        raise ValueError(
-            f"expected default to fit in {n} bits, got {default}"
-        )
-    return lit_field(uint_field(n), default=default)
-
-
-def lit_int_field(n: int, *, default: LiteralIntT) -> Field[LiteralIntT]:
-    if is_int_too_big(default, n, signed=True):
-        raise ValueError(
-            f"expected signed default to fit in {n} bits, got {default}"
-        )
-    return lit_field(int_field(n), default=default)
 
 
 @t.overload

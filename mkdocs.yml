@@ -29,6 +29,8 @@ plugins:
       handlers:
         python:
           options:
+            separate_signature: true
+            show_overloads: false
             annotations_path: brief
             docstring_style: google
             show_root_heading: true
