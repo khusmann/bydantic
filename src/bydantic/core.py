@@ -196,55 +196,6 @@ def undisguise(x: Field[t.Any]) -> BFType:
 
 
 @t.overload
-def bits_field(
-    n: int, *,
-    default: t.Sequence[bool],
-) -> Field[t.Tuple[bool, ...]]: ...
-
-
-@t.overload
-def bits_field(n: int) -> Field[t.Tuple[bool, ...]]: ...
-
-
-def bits_field(n: int, *, default: t.Sequence[bool] | ellipsis = ...) -> Field[t.Tuple[bool, ...]]:
-    return disguise(BFBits(n, ellipsis_to_not_provided(default)))
-
-
-@t.overload
-def map_field(
-    field: Field[_T],
-    vm: ValueMapper[_T, _P], *,
-    default: _P,
-) -> Field[_P]: ...
-
-
-@t.overload
-def map_field(
-    field: Field[_T],
-    vm: ValueMapper[_T, _P],
-) -> Field[_P]: ...
-
-
-def map_field(
-    field: Field[_T],
-    vm: ValueMapper[_T, _P], *,
-    default: _P | ellipsis = ...
-) -> Field[_P]:
-    return disguise(BFMap(undisguise(field), vm, ellipsis_to_not_provided(default)))
-
-
-def _bf_map_helper(
-    field: Field[_T],
-    vm: ValueMapper[_T, _P], *,
-    default: _P | NotProvided = NOT_PROVIDED,
-) -> Field[_P]:
-    if is_provided(default):
-        return map_field(field, vm, default=default)
-    else:
-        return map_field(field, vm)
-
-
-@t.overload
 def uint_field(n: int, *, default: int) -> Field[int]: ...
 
 
@@ -414,6 +365,126 @@ def bool_field(*, default: bool | ellipsis = ...) -> Field[bool]:
     return _bf_map_helper(uint_field(1), IntAsBool(), default=ellipsis_to_not_provided(default))
 
 
+@t.overload
+def bytes_field(*, n_bytes: int, default: bytes) -> Field[bytes]: ...
+
+
+@t.overload
+def bytes_field(*, n_bytes: int) -> Field[bytes]: ...
+
+
+def bytes_field(*, n_bytes: int, default: bytes | ellipsis = ...) -> Field[bytes]:
+    """ A bytes field type.
+
+    Args:
+        n_bytes (int): The number of bytes in the field.
+        default (bytes): An optional default value to use when constructing the field in a new object.
+
+    Returns:
+        Field[bytes]: A field that represents a sequence of bytes.
+
+    Example:
+        ```python
+        import bydantic as bd
+
+        class Foo(bd.Bitfield):
+            a: bytes = bd.bytes_field(2)
+            b: bytes = bd.bytes_field(2, default=b"yz")
+
+        foo = Foo(a=b"xy", b=b"uv")
+        print(foo) # Foo(a=b'xy', b=b'uv')
+
+        foo2 = Foo.from_bytes_exact(b'xyuv')
+        print(foo2) # Foo(a=b'xy', b=b'uv')
+
+        foo3 = Foo(a = b"xy") # b is set to b"yz" by default
+        print(foo3) # Foo(a=b'xy', b=b'yz')
+        print(foo3.to_bytes()) # b'xyyz'
+        ```
+    """
+
+    d = ellipsis_to_not_provided(default)
+
+    if is_provided(d) and len(d) != n_bytes:
+        raise ValueError(
+            f"expected default bytes of length {n_bytes} bytes, got {len(d)} bytes ({d!r})"
+        )
+
+    class ListAsBytes:
+        def forward(self, x: t.List[int]) -> bytes:
+            return bytes(x)
+
+        def back(self, y: bytes) -> t.List[int]:
+            return list(y)
+
+    return _bf_map_helper(list_field(uint_field(8), n_bytes), ListAsBytes(), default=d)
+
+
+@t.overload
+def str_field(
+    *,
+    n_bytes: int,
+    encoding: str = "utf-8",
+    default: str,
+) -> Field[str]: ...
+
+
+@t.overload
+def str_field(
+    *,
+    n_bytes: int, encoding: str = "utf-8") -> Field[str]: ...
+
+
+def str_field(*, n_bytes: int, encoding: str = "utf-8", default: str | ellipsis = ...) -> Field[str]:
+    """ A string field type.
+
+    Args:
+        n_bytes (int): The number of bytes in the field.
+        encoding (str): The encoding to use when converting the bytes to a string.
+        default (str): An optional default value to use when constructing the field in a new object.
+
+    Returns:
+        Field[str]: A field that represents a string.
+
+    Example:
+        ```python
+        import bydantic as bd
+
+        class Foo(bd.Bitfield):
+            a: str = bd.str_field(2)
+            b: str = bd.str_field(2, default="yz")
+
+        foo = Foo(a="xy", b="uv")
+        print(foo) # Foo(a='xy', b='uv')
+
+        foo2 = Foo.from_bytes_exact(b'xyuv')
+        print(foo2) # Foo(a='xy', b='uv')
+
+        foo3 = Foo(a = "xy") # b is set to "yz" by default
+        print(foo3) # Foo(a='xy', b='yz')
+        print(foo3.to_bytes()) # b'xyyz'
+        ```
+    """
+
+    d = ellipsis_to_not_provided(default)
+
+    if is_provided(d):
+        byte_len = len(d.encode(encoding))
+        if byte_len > n_bytes:
+            raise ValueError(
+                f"expected default string of maximum length {n_bytes} bytes, got {byte_len} bytes ({d!r})"
+            )
+
+    class BytesAsStr:
+        def forward(self, x: bytes) -> str:
+            return x.decode(encoding).rstrip("\0")
+
+        def back(self, y: str) -> bytes:
+            return y.ljust(n_bytes, "\0").encode(encoding)
+
+    return _bf_map_helper(bytes_field(n_bytes=n_bytes), BytesAsStr(), default=d)
+
+
 IntEnumT = t.TypeVar("IntEnumT", bound=IntEnum | IntFlag)
 
 
@@ -542,6 +613,83 @@ def int_enum_field(n: int, enum: t.Type[IntEnumT], *, default: IntEnumT | ellips
 
 
 @t.overload
+def none_field(*, default: None) -> Field[None]: ...
+
+
+@t.overload
+def none_field() -> Field[None]: ...
+
+
+def none_field(*, default: None | ellipsis = ...) -> Field[None]:
+    """ A field type that represents no data.
+
+    This field type is most useful when paired with `dynamic_field` to create
+    optional values in a Bitfield.
+
+    Args:
+        default (None): The default value, which is always `None`. (It is explicitly
+            set here so type-checking tools can infer a default has been set on the
+            field.)
+
+    Returns:
+        Field[None]: A field that represents no data.
+
+    Example:
+        ```python
+        import bydantic as bd
+
+        class Foo(bd.Bitfield):
+            a: int = bd.uint_field(8)
+            b: int | None = bd.dynamic_field(lambda x: bd.uint_field(8) if x.a else bd.none_field())
+
+        foo = Foo.from_bytes_exact(b'\\x01\\x02')
+        print(foo) # Foo(a=1, b=2)
+
+        foo2 = Foo.from_bytes_exact(b'\\x00')
+        print(foo2) # Foo(a=0, b=None)
+
+        ```
+    """
+    return disguise(BFNone(default=ellipsis_to_not_provided(default)))
+
+
+@t.overload
+def bits_field(
+    n: int, *,
+    default: t.Sequence[bool],
+) -> Field[t.Tuple[bool, ...]]: ...
+
+
+@t.overload
+def bits_field(n: int) -> Field[t.Tuple[bool, ...]]: ...
+
+
+def bits_field(n: int, *, default: t.Sequence[bool] | ellipsis = ...) -> Field[t.Tuple[bool, ...]]:
+    return disguise(BFBits(n, ellipsis_to_not_provided(default)))
+
+
+@t.overload
+def bitfield_field(
+    cls: t.Type[BitfieldT], n: int, *,
+    default: BitfieldT
+) -> Field[BitfieldT]: ...
+
+
+@t.overload
+def bitfield_field(
+    cls: t.Type[BitfieldT], n: int
+) -> Field[BitfieldT]: ...
+
+
+def bitfield_field(
+    cls: t.Type[BitfieldT],
+    n: int, *,
+    default: BitfieldT | ellipsis = ...
+) -> Field[BitfieldT]:
+    return disguise(BFBitfield(cls, n, default=ellipsis_to_not_provided(default)))
+
+
+@t.overload
 def list_field(
     item: t.Type[_T] | Field[_T],
     n_items: int, *,
@@ -601,123 +749,37 @@ def lit_int_field(n: int, *, default: LiteralIntT) -> Field[LiteralIntT]:
 
 
 @t.overload
-def bytes_field(*, n_bytes: int, default: bytes) -> Field[bytes]: ...
+def map_field(
+    field: Field[_T],
+    vm: ValueMapper[_T, _P], *,
+    default: _P,
+) -> Field[_P]: ...
 
 
 @t.overload
-def bytes_field(*, n_bytes: int) -> Field[bytes]: ...
+def map_field(
+    field: Field[_T],
+    vm: ValueMapper[_T, _P],
+) -> Field[_P]: ...
 
 
-def bytes_field(*, n_bytes: int, default: bytes | ellipsis = ...) -> Field[bytes]:
-    """ A bytes field type.
-
-    Args:
-        n_bytes (int): The number of bytes in the field.
-        default (bytes): An optional default value to use when constructing the field in a new object.
-
-    Returns:
-        Field[bytes]: A field that represents a sequence of bytes.
-
-    Example:
-        ```python
-        import bydantic as bd
-
-        class Foo(bd.Bitfield):
-            a: bytes = bd.bytes_field(2)
-            b: bytes = bd.bytes_field(2, default=b"yz")
-
-        foo = Foo(a=b"xy", b=b"uv")
-        print(foo) # Foo(a=b'xy', b=b'uv')
-
-        foo2 = Foo.from_bytes_exact(b'xyuv')
-        print(foo2) # Foo(a=b'xy', b=b'uv')
-
-        foo3 = Foo(a = b"xy") # b is set to b"yz" by default
-        print(foo3) # Foo(a=b'xy', b=b'yz')
-        print(foo3.to_bytes()) # b'xyyz'
-        ```
-    """
-
-    d = ellipsis_to_not_provided(default)
-
-    if is_provided(d) and len(d) != n_bytes:
-        raise ValueError(
-            f"expected default bytes of length {n_bytes} bytes, got {len(d)} bytes ({d!r})"
-        )
-
-    class ListAsBytes:
-        def forward(self, x: t.List[int]) -> bytes:
-            return bytes(x)
-
-        def back(self, y: bytes) -> t.List[int]:
-            return list(y)
-
-    return _bf_map_helper(list_field(uint_field(8), n_bytes), ListAsBytes(), default=d)
+def map_field(
+    field: Field[_T],
+    vm: ValueMapper[_T, _P], *,
+    default: _P | ellipsis = ...
+) -> Field[_P]:
+    return disguise(BFMap(undisguise(field), vm, ellipsis_to_not_provided(default)))
 
 
-@t.overload
-def str_field(
-    *,
-    n_bytes: int,
-    encoding: str = "utf-8",
-    default: str,
-) -> Field[str]: ...
-
-
-@t.overload
-def str_field(
-    *,
-    n_bytes: int, encoding: str = "utf-8") -> Field[str]: ...
-
-
-def str_field(*, n_bytes: int, encoding: str = "utf-8", default: str | ellipsis = ...) -> Field[str]:
-    """ A string field type.
-
-    Args:
-        n_bytes (int): The number of bytes in the field.
-        encoding (str): The encoding to use when converting the bytes to a string.
-        default (str): An optional default value to use when constructing the field in a new object.
-
-    Returns:
-        Field[str]: A field that represents a string.
-
-    Example:
-        ```python
-        import bydantic as bd
-
-        class Foo(bd.Bitfield):
-            a: str = bd.str_field(2)
-            b: str = bd.str_field(2, default="yz")
-
-        foo = Foo(a="xy", b="uv")
-        print(foo) # Foo(a='xy', b='uv')
-
-        foo2 = Foo.from_bytes_exact(b'xyuv')
-        print(foo2) # Foo(a='xy', b='uv')
-
-        foo3 = Foo(a = "xy") # b is set to "yz" by default
-        print(foo3) # Foo(a='xy', b='yz')
-        print(foo3.to_bytes()) # b'xyyz'
-        ```
-    """
-
-    d = ellipsis_to_not_provided(default)
-
-    if is_provided(d):
-        byte_len = len(d.encode(encoding))
-        if byte_len > n_bytes:
-            raise ValueError(
-                f"expected default string of maximum length {n_bytes} bytes, got {byte_len} bytes ({d!r})"
-            )
-
-    class BytesAsStr:
-        def forward(self, x: bytes) -> str:
-            return x.decode(encoding).rstrip("\0")
-
-        def back(self, y: str) -> bytes:
-            return y.ljust(n_bytes, "\0").encode(encoding)
-
-    return _bf_map_helper(bytes_field(n_bytes=n_bytes), BytesAsStr(), default=d)
+def _bf_map_helper(
+    field: Field[_T],
+    vm: ValueMapper[_T, _P], *,
+    default: _P | NotProvided = NOT_PROVIDED,
+) -> Field[_P]:
+    if is_provided(default):
+        return map_field(field, vm, default=default)
+    else:
+        return map_field(field, vm)
 
 
 @t.overload
@@ -757,68 +819,6 @@ def dynamic_field(
             return disguise(BFDynSelfN(fn, default))
         case _:
             raise ValueError(f"unsupported number of parameters: {n_params}")
-
-
-@t.overload
-def none_field(*, default: None) -> Field[None]: ...
-
-
-@t.overload
-def none_field() -> Field[None]: ...
-
-
-def none_field(*, default: None | ellipsis = ...) -> Field[None]:
-    """ A field type that represents no data.
-
-    This field type is most useful when paired with `dynamic_field` to create
-    optional values in a Bitfield.
-
-    Args:
-        default (None): The default value, which is always `None`. (It is explicitly
-            set here so type-checking tools can infer a default has been set on the
-            field.)
-
-    Returns:
-        Field[None]: A field that represents no data.
-
-    Example:
-        ```python
-        import bydantic as bd
-
-        class Foo(bd.Bitfield):
-            a: int = bd.uint_field(8)
-            b: int | None = bd.dynamic_field(lambda x: bd.uint_field(8) if x.a else bd.none_field())
-
-        foo = Foo.from_bytes_exact(b'\\x01\\x02')
-        print(foo) # Foo(a=1, b=2)
-
-        foo2 = Foo.from_bytes_exact(b'\\x00')
-        print(foo2) # Foo(a=0, b=None)
-
-        ```
-    """
-    return disguise(BFNone(default=ellipsis_to_not_provided(default)))
-
-
-@t.overload
-def bitfield_field(
-    cls: t.Type[BitfieldT], n: int, *,
-    default: BitfieldT
-) -> Field[BitfieldT]: ...
-
-
-@t.overload
-def bitfield_field(
-    cls: t.Type[BitfieldT], n: int
-) -> Field[BitfieldT]: ...
-
-
-def bitfield_field(
-    cls: t.Type[BitfieldT],
-    n: int, *,
-    default: BitfieldT | ellipsis = ...
-) -> Field[BitfieldT]:
-    return disguise(BFBitfield(cls, n, default=ellipsis_to_not_provided(default)))
 
 
 ContextT = TypeVarDefault("ContextT", default=None)

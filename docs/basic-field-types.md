@@ -32,6 +32,6 @@ constructed via [field type combinators](#field-type-combinators).
 
 ### ::: bydantic.list_field
 
-### ::: bydantic.dynamic_field
-
 ### ::: bydantic.map_field
+
+### ::: bydantic.dynamic_field
