@@ -581,7 +581,23 @@ def lit_field(field: Field[_LiteralT], *, default: _P) -> Field[_P]:
 
 
 def lit_uint_field(n: int, *, default: _IntLiteralT) -> Field[_IntLiteralT]:
+    if default < 0:
+        raise ValueError(
+            f"expected default to be non-negative, got {default}"
+        )
+    if is_int_too_big(default, n, signed=False):
+        raise ValueError(
+            f"expected default to fit in {n} bits, got {default}"
+        )
     return lit_field(uint_field(n), default=default)
+
+
+def lit_int_field(n: int, *, default: _IntLiteralT) -> Field[_IntLiteralT]:
+    if is_int_too_big(default, n, signed=True):
+        raise ValueError(
+            f"expected signed default to fit in {n} bits, got {default}"
+        )
+    return lit_field(int_field(n), default=default)
 
 
 @t.overload
