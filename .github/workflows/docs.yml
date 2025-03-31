@@ -25,5 +25,7 @@ jobs:
           restore-keys: |
             mkdocs-material-
       - run: pip install mkdocs-material 
+      - run: pip install black
+      - run: pip install mkdocstrings[python]
       - run: pip install mkdocs-gen-files
       - run: mkdocs gh-deploy --force
