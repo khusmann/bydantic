@@ -18,6 +18,8 @@ constructed via [field type combinators](#field-type-combinators).
 
 ### ::: bydantic.uint_enum_field
 
+### ::: bydantic.int_enum_field
+
 ### ::: bydantic.none_field
 
 ### ::: bydantic.bits_field

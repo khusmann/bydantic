@@ -136,7 +136,7 @@ def test_kitchen_sink():
         ay: t.Literal[b'world'] = b'world'
         ab: int = bd.uint_field(10)
         ac: int = bd.uint_field(2)
-        zz: BarEnum = bd.uint_enum_field(BarEnum, 2)
+        zz: BarEnum = bd.uint_enum_field(2, BarEnum)
         yy: bytes = bd.bytes_field(n_bytes=2)
         ad: int = bd.uint_field(3)
         c: t.Literal[10] | list[float] | Baz = bd.dynamic_field(foo)
@@ -273,6 +273,31 @@ def test_dyn_error():
 
     with pytest.raises(bd.SerializeFieldError, match=re.escape("TypeError in field 'Foo.b': expected int, got str")):
         Foo(a=0, b="a").to_bits()
+
+
+def test_int_enum():
+    class UnsignedEnum(IntEnum):
+        A = 1
+        B = 2
+        C = 3
+
+    class SignedEnum(IntEnum):
+        A = -1
+        B = 0
+        C = 1
+
+    class Foo(bd.Bitfield):
+        a: UnsignedEnum = bd.uint_enum_field(4, UnsignedEnum)
+        b: SignedEnum = bd.int_enum_field(4, SignedEnum)
+
+    foo = Foo(a=UnsignedEnum.A, b=SignedEnum.A)
+    assert foo.to_bytes() == b'\x1f'
+    assert Foo.from_bytes_exact(foo.to_bytes()) == foo
+
+    with pytest.raises(ValueError):
+        class Fail1(bd.Bitfield):
+            a: SignedEnum = bd.uint_enum_field(4, SignedEnum)
+        print(Fail1)
 
 
 def test_signed_int():

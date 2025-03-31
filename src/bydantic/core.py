@@ -418,16 +418,18 @@ IntEnumT = t.TypeVar("IntEnumT", bound=IntEnum | IntFlag)
 
 
 @t.overload
-def uint_enum_field(enum: t.Type[IntEnumT], n: int, *,
+def uint_enum_field(n: int, enum: t.Type[IntEnumT], *,
                     default: IntEnumT) -> Field[IntEnumT]: ...
 
 
 @t.overload
-def uint_enum_field(enum: t.Type[IntEnumT],
-                    n: int) -> Field[IntEnumT]: ...
+def uint_enum_field(
+    n: int,
+    enum: t.Type[IntEnumT],
+) -> Field[IntEnumT]: ...
 
 
-def uint_enum_field(enum: t.Type[IntEnumT], n: int, *, default: IntEnumT | ellipsis = ...) -> Field[IntEnumT]:
+def uint_enum_field(n: int, enum: t.Type[IntEnumT], *, default: IntEnumT | ellipsis = ...) -> Field[IntEnumT]:
     """ An unsigned integer enum field type.
 
     Args:
@@ -466,6 +468,12 @@ def uint_enum_field(enum: t.Type[IntEnumT], n: int, *, default: IntEnumT | ellip
         print(foo3.to_bytes()) # b'\x12'
         ```
     """
+
+    if any(i.value < 0 for i in list(enum)):
+        raise ValueError(
+            "enum values in an unsigned int enum must be non-negative"
+        )
+
     class IntAsEnum:
         def forward(self, x: int) -> IntEnumT:
             return enum(x)
@@ -474,6 +482,63 @@ def uint_enum_field(enum: t.Type[IntEnumT], n: int, *, default: IntEnumT | ellip
             return y.value
 
     return _bf_map_helper(uint_field(n), IntAsEnum(), default=ellipsis_to_not_provided(default))
+
+
+@t.overload
+def int_enum_field(n: int, enum: t.Type[IntEnumT], *,
+                   default: IntEnumT) -> Field[IntEnumT]: ...
+
+
+@t.overload
+def int_enum_field(
+    n: int,
+    enum: t.Type[IntEnumT],
+) -> Field[IntEnumT]: ...
+
+
+def int_enum_field(n: int, enum: t.Type[IntEnumT], *, default: IntEnumT | ellipsis = ...) -> Field[IntEnumT]:
+    """ An signed integer enum field type.
+
+    Args:
+        n (int): The number of bits used to represent the enum.
+        enum (Type[IntEnumT]): The enum class to use for the field. (Must be a subclass of IntEnum or IntFlag)
+        default (IntEnumT): An optional default value to use when constructing the field in a new object
+            (Must match the enum type passed in the `enum` arg).
+
+    Returns:
+        Field[IntEnumT]: A field that represents an unsigned integer enum.
+
+    Example:
+        ```python
+        import bydantic as bd
+        from enum import IntEnum
+
+        class Color(IntEnum):
+            RED = -2
+            GREEN = -1
+            BLUE = 0
+            PURPLE = 1
+
+        class Foo(bd.Bitfield):
+            a: Color = bd.int_enum_field(4, Color)
+            b: Color = bd.int_enum_field(4, Color, default=Color.GREEN)
+
+        foo = Foo(a=Color.RED, b=Color.BLUE)
+        print(foo) # Foo(a=<Color.RED: -2>, b=<Color.BLUE: 0>)
+        print(foo.to_bytes()) # b'\\xe0'
+
+        foo2 = Foo.from_bytes_exact(b'\xfe')
+        print(foo2) # Foo(a=<Color.GREEN: -1>, b=<Color.RED: -2>)
+        ```
+    """
+    class IntAsEnum:
+        def forward(self, x: int) -> IntEnumT:
+            return enum(x)
+
+        def back(self, y: IntEnumT) -> int:
+            return y.value
+
+    return _bf_map_helper(int_field(n), IntAsEnum(), default=ellipsis_to_not_provided(default))
 
 
 @t.overload
