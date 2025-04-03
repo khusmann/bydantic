@@ -195,14 +195,6 @@ def undisguise(x: Field[t.Any]) -> BFType:
     raise TypeError(f"expected a field type, got {x!r}")
 
 
-@t.overload
-def uint_field(n: int, *, default: int) -> Field[int]: ...
-
-
-@t.overload
-def uint_field(n: int) -> Field[int]: ...
-
-
 def uint_field(n: int, *, default: int | ellipsis = ...) -> Field[int]:
     """ An unsigned integer field type.
 
@@ -246,14 +238,6 @@ def uint_field(n: int, *, default: int | ellipsis = ...) -> Field[int]:
                 f"expected default to fit in {n} bits, got {d}"
             )
     return disguise(BFUInt(n, d))
-
-
-@t.overload
-def int_field(n: int, *, default: int) -> Field[int]: ...
-
-
-@t.overload
-def int_field(n: int) -> Field[int]: ...
 
 
 def int_field(n: int, *, default: int | ellipsis = ...) -> Field[int]:
@@ -317,14 +301,6 @@ def int_field(n: int, *, default: int | ellipsis = ...) -> Field[int]:
     return _bf_map_helper(uint_field(n), ConvertSign(), default=d)
 
 
-@t.overload
-def bool_field(*, default: bool) -> Field[bool]: ...
-
-
-@t.overload
-def bool_field() -> Field[bool]: ...
-
-
 def bool_field(*, default: bool | ellipsis = ...) -> Field[bool]:
     """ A boolean field type. (Bit flag)
 
@@ -363,14 +339,6 @@ def bool_field(*, default: bool | ellipsis = ...) -> Field[bool]:
             return 1 if y else 0
 
     return _bf_map_helper(uint_field(1), IntAsBool(), default=ellipsis_to_not_provided(default))
-
-
-@t.overload
-def bytes_field(*, n_bytes: int, default: bytes) -> Field[bytes]: ...
-
-
-@t.overload
-def bytes_field(*, n_bytes: int) -> Field[bytes]: ...
 
 
 def bytes_field(*, n_bytes: int, default: bytes | ellipsis = ...) -> Field[bytes]:
@@ -418,21 +386,6 @@ def bytes_field(*, n_bytes: int, default: bytes | ellipsis = ...) -> Field[bytes
             return list(y)
 
     return _bf_map_helper(list_field(uint_field(8), n_bytes), ListAsBytes(), default=d)
-
-
-@t.overload
-def str_field(
-    *,
-    n_bytes: int,
-    encoding: str = "utf-8",
-    default: str,
-) -> Field[str]: ...
-
-
-@t.overload
-def str_field(
-    *,
-    n_bytes: int, encoding: str = "utf-8") -> Field[str]: ...
 
 
 def str_field(*, n_bytes: int, encoding: str = "utf-8", default: str | ellipsis = ...) -> Field[str]:
@@ -488,18 +441,6 @@ def str_field(*, n_bytes: int, encoding: str = "utf-8", default: str | ellipsis 
 IntEnumT = t.TypeVar("IntEnumT", bound=IntEnum | IntFlag)
 
 
-@t.overload
-def uint_enum_field(n: int, enum: t.Type[IntEnumT], *,
-                    default: IntEnumT) -> Field[IntEnumT]: ...
-
-
-@t.overload
-def uint_enum_field(
-    n: int,
-    enum: t.Type[IntEnumT],
-) -> Field[IntEnumT]: ...
-
-
 def uint_enum_field(n: int, enum: t.Type[IntEnumT], *, default: IntEnumT | ellipsis = ...) -> Field[IntEnumT]:
     """ An unsigned integer enum field type.
 
@@ -553,18 +494,6 @@ def uint_enum_field(n: int, enum: t.Type[IntEnumT], *, default: IntEnumT | ellip
             return y.value
 
     return _bf_map_helper(uint_field(n), IntAsEnum(), default=ellipsis_to_not_provided(default))
-
-
-@t.overload
-def int_enum_field(n: int, enum: t.Type[IntEnumT], *,
-                   default: IntEnumT) -> Field[IntEnumT]: ...
-
-
-@t.overload
-def int_enum_field(
-    n: int,
-    enum: t.Type[IntEnumT],
-) -> Field[IntEnumT]: ...
 
 
 def int_enum_field(n: int, enum: t.Type[IntEnumT], *, default: IntEnumT | ellipsis = ...) -> Field[IntEnumT]:
@@ -721,17 +650,6 @@ def none_field(*, default: None | ellipsis = ...) -> Field[None]:
     return disguise(BFNone(default=ellipsis_to_not_provided(default)))
 
 
-@t.overload
-def bits_field(
-    n: int, *,
-    default: t.Sequence[bool],
-) -> Field[t.Tuple[bool, ...]]: ...
-
-
-@t.overload
-def bits_field(n: int) -> Field[t.Tuple[bool, ...]]: ...
-
-
 def bits_field(n: int, *, default: t.Sequence[bool] | ellipsis = ...) -> Field[t.Tuple[bool, ...]]:
     """ A field type that represents a sequence of bits. (A tuple of booleans).
 
@@ -765,25 +683,6 @@ def bits_field(n: int, *, default: t.Sequence[bool] | ellipsis = ...) -> Field[t
         ```
     """
     return disguise(BFBits(n, ellipsis_to_not_provided(default)))
-
-
-@t.overload
-def bitfield_field(
-    cls: t.Type[BitfieldT]
-) -> Field[BitfieldT]: ...
-
-
-@t.overload
-def bitfield_field(
-    cls: t.Type[BitfieldT], n: int, *,
-    default: BitfieldT
-) -> Field[BitfieldT]: ...
-
-
-@t.overload
-def bitfield_field(
-    cls: t.Type[BitfieldT], n: int
-) -> Field[BitfieldT]: ...
 
 
 def bitfield_field(
@@ -844,21 +743,6 @@ def bitfield_field(
     return disguise(BFBitfield(cls, n, default=ellipsis_to_not_provided(default)))
 
 
-@t.overload
-def list_field(
-    item: t.Type[T] | Field[T],
-    n_items: int, *,
-    default: t.List[T]
-) -> Field[t.List[T]]: ...
-
-
-@t.overload
-def list_field(
-    item: t.Type[T] | Field[T],
-    n_items: int
-) -> Field[t.List[T]]: ...
-
-
 def list_field(
     item: t.Type[T] | Field[T],
     n_items: int, *,
@@ -882,21 +766,6 @@ def lit_field(
     return disguise(BFLit(undisguise(field), default))
 
 
-@t.overload
-def map_field(
-    field: Field[T],
-    vm: ValueMapper[T, P], *,
-    default: P,
-) -> Field[P]: ...
-
-
-@t.overload
-def map_field(
-    field: Field[T],
-    vm: ValueMapper[T, P],
-) -> Field[P]: ...
-
-
 def map_field(
     field: Field[T],
     vm: ValueMapper[T, P], *,
@@ -914,21 +783,6 @@ def _bf_map_helper(
         return map_field(field, vm, default=default)
     else:
         return map_field(field, vm)
-
-
-@t.overload
-def dynamic_field(
-    fn: t.Callable[[t.Any], t.Type[T] | Field[T]] |
-    t.Callable[[t.Any, int], t.Type[T] | Field[T]], *,
-    default: T
-) -> Field[T]: ...
-
-
-@t.overload
-def dynamic_field(
-    fn: t.Callable[[t.Any], t.Type[T] | Field[T]] |
-    t.Callable[[t.Any, int], t.Type[T] | Field[T]]
-) -> Field[T]: ...
 
 
 def dynamic_field(
