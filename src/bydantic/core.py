@@ -6,7 +6,7 @@ from typing_extensions import dataclass_transform, TypeVar as TypeVarDefault, Se
 import typing as t
 import inspect
 
-from enum import IntEnum, IntFlag, Enum
+from enum import IntEnum, IntFlag
 
 from .utils import (
     BitstreamReader,
@@ -612,6 +612,9 @@ def int_enum_field(n: int, enum: t.Type[IntEnumT], *, default: IntEnumT | ellips
     return _bf_map_helper(int_field(n), IntAsEnum(), default=ellipsis_to_not_provided(default))
 
 
+LiteralIntT = t.TypeVar("LiteralIntT", bound=int)
+
+
 def lit_uint_field(n: int, *, default: LiteralIntT) -> Field[LiteralIntT]:
     """ A literal unsigned integer field type.
 
@@ -871,12 +874,11 @@ def list_field(
     return disguise(BFList(undisguise(item), n_items, d))
 
 
-LiteralT = t.TypeVar("LiteralT", bound=str | int | float | bytes | Enum)
-
-LiteralIntT = t.TypeVar("LiteralIntT", bound=int)
-
-
-def lit_field(field: Field[LiteralT], *, default: _P) -> Field[_P]:
+def lit_field(
+    field: Field[_T],
+    *,
+    default: _P
+) -> Field[_P]:
     return disguise(BFLit(undisguise(field), default))
 
 
