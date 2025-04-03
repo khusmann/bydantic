@@ -694,8 +694,8 @@ def bitfield_field(
 
     Args:
         cls (t.Type[BitfieldT]): The Bitfield class to use for the field.
-        n (int | ellipsis): The number of bits in the field. Note: for non-dynamic bitfields
-            this can be inferred from the class itself.
+        n (int | ellipsis): The number of bits in the field. Note: this is optional
+            for non-dynamic bitfields because it can inferred from the class itself.
         default (BitfieldT | ellipsis): An optional default value to use when constructing
             the field in a new object.
 
