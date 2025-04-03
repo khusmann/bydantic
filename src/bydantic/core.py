@@ -766,6 +766,12 @@ def bits_field(n: int, *, default: t.Sequence[bool] | ellipsis = ...) -> Field[t
 
 @t.overload
 def bitfield_field(
+    cls: t.Type[BitfieldT]
+) -> Field[BitfieldT]: ...
+
+
+@t.overload
+def bitfield_field(
     cls: t.Type[BitfieldT], n: int, *,
     default: BitfieldT
 ) -> Field[BitfieldT]: ...
@@ -779,9 +785,59 @@ def bitfield_field(
 
 def bitfield_field(
     cls: t.Type[BitfieldT],
-    n: int, *,
+    n: int | ellipsis = ..., *,
     default: BitfieldT | ellipsis = ...
 ) -> Field[BitfieldT]:
+    """ A field type that represents a Bitfield.
+
+    Args:
+        cls (t.Type[BitfieldT]): The Bitfield class to use for the field.
+        n (int | ellipsis): The number of bits in the field. Note: for non-dynamic bitfields
+            this can be inferred from the class itself.
+        default (BitfieldT | ellipsis): An optional default value to use when constructing
+            the field in a new object.
+
+    Returns:
+        Field[BitfieldT]: A field that represents a Bitfield.
+
+    Example:
+        ```python
+        import bydantic as bd
+
+        class Foo(bd.Bitfield):
+            a: int = bd.uint_field(4)
+            b: int = bd.uint_field(4, default=0)
+
+        class Bar(bd.Bitfield):
+            c: Foo = bd.bitfield_field(Foo, 8)
+
+        bar = Bar(c=Foo(a=1, b=2))
+        print(bar) # Bar(c=Foo(a=1, b=2))
+        print(bar.to_bytes()) # b'\\x12\\x02'
+
+        bar2 = Bar.from_bytes_exact(b'\\x12\\x02')
+        print(bar2) # Bar(c=Foo(a=1, b=2))
+
+        bar3 = Bar(c=Foo(a=1)) # c is set to Foo(a=1, b=0) by default
+        print(bar3) # Bar(c=Foo(a=1, b=0))
+        print(bar3.to_bytes()) # b'\\x10\\x00'
+
+        # For non-dynamic bitfields, the size can be inferred:
+        class Baz(bd.Bitfield):
+            c: Foo = bd.bitfield_field(Foo)
+
+        baz = Baz(c=Foo(a=1, b=2))
+        print(baz) # Baz(c=Foo(a=1, b=2))
+        print(baz.to_bytes()) # b'\\x12\\x02'
+        ```
+    """
+
+    if n is ...:
+        cls_length = cls.length()
+        if cls_length is None:
+            raise TypeError("cannot infer length for dynamic Bitfield")
+        n = cls_length
+
     return disguise(BFBitfield(cls, n, default=ellipsis_to_not_provided(default)))
 
 

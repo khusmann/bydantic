@@ -26,6 +26,47 @@ def test_basic():
     assert Work.from_bytes_exact(work.to_bytes()) == work
 
 
+def test_bitfield_field():
+    class Inner(bd.Bitfield):
+        a: int = bd.uint_field(4)
+        b: str = bd.str_field(n_bytes=3)
+
+    class Work(bd.Bitfield):
+        a: int = bd.uint_field(4)
+        b: Inner = bd.bitfield_field(Inner, 28)
+
+    work = Work(a=1, b=Inner(a=2, b="abc"))
+    assert work.to_bytes() == b'\x12abc'
+    assert Work.from_bytes_exact(work.to_bytes()) == work
+
+    class Work2(bd.Bitfield):
+        a: int = bd.uint_field(4)
+        b: Inner = bd.bitfield_field(Inner)
+
+    work2 = Work2(a=1, b=Inner(a=2, b="abc"))
+    assert work2.to_bytes() == b'\x12abc'
+    assert Work2.from_bytes_exact(work2.to_bytes()) == work2
+
+    class Work3(bd.Bitfield):
+        a: int = bd.uint_field(4)
+        b: Inner
+
+    work3 = Work3(a=1, b=Inner(a=2, b="abc"))
+    assert work3.to_bytes() == b'\x12abc'
+    assert Work3.from_bytes_exact(work3.to_bytes()) == work3
+
+    with pytest.raises(TypeError):
+        class InnerDyn(bd.Bitfield):
+            a: int | None = bd.dynamic_field(
+                lambda x: bd.uint_field(4) if x.a == 0 else None
+            )
+
+        class Fail(bd.Bitfield):
+            a: int = bd.uint_field(4)
+            b: InnerDyn
+        print(Fail)
+
+
 def test_none():
     class Work(bd.Bitfield):
         a: int = bd.uint_field(8)
