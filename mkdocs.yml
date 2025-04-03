@@ -15,6 +15,9 @@ theme:
   features:
     - content.code.copy
 
+watch:
+  - src
+
 markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true
@@ -30,6 +33,7 @@ plugins:
         python:
           options:
             separate_signature: true
+            show_signature_annotations: true
             show_overloads: false
             annotations_path: brief
             docstring_style: google

@@ -208,7 +208,7 @@ def uint_field(n: int, *, default: int | ellipsis = ...) -> Field[int]:
 
     Args:
         n (int): The number of bits used to represent the unsigned integer.
-        default (int): An optional default value to use when constructing the field in a new object.
+        default (int | ellipsis): An optional default value to use when constructing the field in a new object.
 
     Returns:
         Field[int]: A field that represents an unsigned integer.
@@ -261,7 +261,7 @@ def int_field(n: int, *, default: int | ellipsis = ...) -> Field[int]:
 
     Args:
         n (int): The number of bits used to represent the signed integer.
-        default (int): An optional default value to use when constructing the field in a new object.
+        default (int | ellipsis): An optional default value to use when constructing the field in a new object.
 
     Returns:
         Field[int]: A field that represents a signed integer.
@@ -329,7 +329,7 @@ def bool_field(*, default: bool | ellipsis = ...) -> Field[bool]:
     """ A boolean field type. (Bit flag)
 
     Args:
-        default (bool): An optional default value to use when constructing the field in a new object.
+        default (bool | ellipsis): An optional default value to use when constructing the field in a new object.
 
     Returns:
         Field[bool]: A field that represents a boolean.
@@ -378,7 +378,7 @@ def bytes_field(*, n_bytes: int, default: bytes | ellipsis = ...) -> Field[bytes
 
     Args:
         n_bytes (int): The number of bytes in the field.
-        default (bytes): An optional default value to use when constructing the field in a new object.
+        default (bytes | ellipsis): An optional default value to use when constructing the field in a new object.
 
     Returns:
         Field[bytes]: A field that represents a sequence of bytes.
@@ -441,7 +441,7 @@ def str_field(*, n_bytes: int, encoding: str = "utf-8", default: str | ellipsis 
     Args:
         n_bytes (int): The number of bytes in the field.
         encoding (str): The encoding to use when converting the bytes to a string.
-        default (str): An optional default value to use when constructing the field in a new object.
+        default (str | ellipsis): An optional default value to use when constructing the field in a new object.
 
     Returns:
         Field[str]: A field that represents a string.
@@ -506,7 +506,7 @@ def uint_enum_field(n: int, enum: t.Type[IntEnumT], *, default: IntEnumT | ellip
     Args:
         enum (Type[IntEnumT]): The enum class to use for the field. (Must be a subclass of IntEnum or IntFlag)
         n (int): The number of bits used to represent the enum.
-        default (IntEnumT): An optional default value to use when constructing the field in a new object
+        default (IntEnumT | ellipsis): An optional default value to use when constructing the field in a new object
             (Must match the enum type passed in the `enum` arg).
 
     Returns:
@@ -573,7 +573,7 @@ def int_enum_field(n: int, enum: t.Type[IntEnumT], *, default: IntEnumT | ellips
     Args:
         n (int): The number of bits used to represent the enum.
         enum (Type[IntEnumT]): The enum class to use for the field. (Must be a subclass of IntEnum or IntFlag)
-        default (IntEnumT): An optional default value to use when constructing the field in a new object
+        default (IntEnumT | ellipsis): An optional default value to use when constructing the field in a new object
             (Must match the enum type passed in the `enum` arg).
 
     Returns:
@@ -632,16 +632,15 @@ def lit_int_field(n: int, *, default: LiteralIntT) -> Field[LiteralIntT]:
     return lit_field(int_field(n), default=default)
 
 
-def none_field(*, default: None) -> Field[None]:
+def none_field(*, default: None | ellipsis = ...) -> Field[None]:
     """ A field type that represents no data.
 
     This field type is most useful when paired with `dynamic_field` to create
     optional values in a Bitfield.
 
     Args:
-        default (None): The default value, which is always `None`. (It is explicitly
-            set here so type-checking tools can infer a default has been set on the
-            field.)
+        default (None | ellipsis): The optional default value to use when constructing
+            the field in a new object.
 
     Returns:
         Field[None]: A field that represents no data.
