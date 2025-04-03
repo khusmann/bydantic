@@ -613,6 +613,33 @@ def int_enum_field(n: int, enum: t.Type[IntEnumT], *, default: IntEnumT | ellips
 
 
 def lit_uint_field(n: int, *, default: LiteralIntT) -> Field[LiteralIntT]:
+    """ A literal unsigned integer field type.
+
+    Args:
+        n (int): The number of bits used to represent the unsigned integer.
+        default (LiteralIntT): The literal default value to use when constructing the field in a new object.
+            (Required to infer the literal type).
+
+    Returns:
+        Field[LiteralIntT]: A field that represents a literal unsigned integer.
+
+    Example:
+        ```python
+        import bydantic as bd
+        import typing as t
+
+        class Foo(bd.Bitfield):
+            a: t.Literal[1] = bd.lit_uint_field(4, default=1)
+            b: t.Literal[2] = bd.lit_uint_field(4, default=2)
+
+        foo = Foo()
+        print(foo) # Foo(a=1, b=2)
+        print(foo.to_bytes()) # b'\\x12'
+
+        foo2 = Foo.from_bytes_exact(b'\\x12')
+        print(foo2) # Foo(a=1, b=2)
+        ```
+    """
     if default < 0:
         raise ValueError(
             f"expected default to be non-negative, got {default}"
@@ -625,6 +652,33 @@ def lit_uint_field(n: int, *, default: LiteralIntT) -> Field[LiteralIntT]:
 
 
 def lit_int_field(n: int, *, default: LiteralIntT) -> Field[LiteralIntT]:
+    """ A literal signed integer field type.
+
+    Args:
+        n (int): The number of bits used to represent the signed integer.
+        default (LiteralIntT): The literal default value to use when constructing the field in a new object.
+            (Required to infer the literal type).
+
+    Returns:
+        Field[LiteralIntT]: A field that represents a literal signed integer.
+
+    Example:
+        ```python
+        import bydantic as bd
+        import typing as t
+
+        class Foo(bd.Bitfield):
+            a: t.Literal[-1] = bd.lit_int_field(4, default=-1)
+            b: t.Literal[2] = bd.lit_int_field(4, default=2)
+
+        foo = Foo()
+        print(foo) # Foo(a=-1, b=2)
+        print(foo.to_bytes()) # b'\\xf2'
+
+        foo2 = Foo.from_bytes_exact(b'\\xf2')
+        print(foo2) # Foo(a=-1, b=2)
+        ```
+    """
     if is_int_too_big(default, n, signed=True):
         raise ValueError(
             f"expected signed default to fit in {n} bits, got {default}"
