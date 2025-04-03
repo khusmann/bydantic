@@ -730,6 +730,37 @@ def bits_field(n: int) -> Field[t.Tuple[bool, ...]]: ...
 
 
 def bits_field(n: int, *, default: t.Sequence[bool] | ellipsis = ...) -> Field[t.Tuple[bool, ...]]:
+    """ A field type that represents a sequence of bits. (A tuple of booleans).
+
+    Args:
+        n (int): The number of bits in the field.
+        default (t.Sequence[bool] | ellipsis): An optional default value to use when
+            constructing the field in a new object. 
+
+    Returns:
+        Field[t.Tuple[bool, ...]]: A field that represents a sequence of bits.
+
+    Example:
+        ```python
+        import bydantic as bd
+        import typing as t
+
+        class Foo(bd.Bitfield):
+            a: t.Tuple[bool, ...] = bd.bits_field(4)
+            b: t.Tuple[bool, ...] = bd.bits_field(4, default=(True, False, True, False))
+
+        foo = Foo(a=(True, False, True, False), b=(False, True, False, True))
+        print(foo) # Foo(a=(True, False, True, False), b=(False, True, False, True))
+        print(foo.to_bytes()) # b'\\xaa\\xaa'
+
+        foo2 = Foo.from_bytes_exact(b'\\xaa\\xaa')
+        print(foo2) # Foo(a=(True, False, True, False), b=(False, True, False, True))
+
+        foo3 = Foo(a=(True, False, True, False)) # b is set to (True, False, True, False) by default
+        print(foo3) # Foo(a=(True, False, True, False), b=(True, False, True, False))
+        print(foo3.to_bytes()) # b'\\xaa\\xaa'
+        ```
+    """
     return disguise(BFBits(n, ellipsis_to_not_provided(default)))
 
 
