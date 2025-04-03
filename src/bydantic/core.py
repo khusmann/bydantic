@@ -190,7 +190,7 @@ def undisguise(x: Field[t.Any]) -> BFType:
         return undisguise(lit_field(bytes_field(n_bytes=len(x)), default=x))
 
     if x is None:
-        return undisguise(none_field())
+        return undisguise(none_field(default=None))
 
     raise TypeError(f"expected a field type, got {x!r}")
 
@@ -632,15 +632,7 @@ def lit_int_field(n: int, *, default: LiteralIntT) -> Field[LiteralIntT]:
     return lit_field(int_field(n), default=default)
 
 
-@t.overload
-def none_field(*, default: None) -> Field[None]: ...
-
-
-@t.overload
-def none_field() -> Field[None]: ...
-
-
-def none_field(*, default: None | ellipsis = ...) -> Field[None]:
+def none_field(*, default: None) -> Field[None]:
     """ A field type that represents no data.
 
     This field type is most useful when paired with `dynamic_field` to create

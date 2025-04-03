@@ -26,6 +26,16 @@ def test_basic():
     assert Work.from_bytes_exact(work.to_bytes()) == work
 
 
+def test_none():
+    class Work(bd.Bitfield):
+        a: int = bd.uint_field(8)
+        b: None = None
+
+    work = Work(a=1)
+    assert work.to_bytes() == b'\x01'
+    assert Work.from_bytes_exact(work.to_bytes()) == work
+
+
 def test_str_field():
     class Work(bd.Bitfield):
         a: str = bd.str_field(n_bytes=8)
