@@ -46,13 +46,13 @@ class SerializeFieldError(FieldError):
     pass
 
 
-_T = t.TypeVar("_T")
-_P = t.TypeVar("_P")
+T = t.TypeVar("T")
+P = t.TypeVar("P")
 
 
-class ValueMapper(t.Protocol[_T, _P]):
-    def forward(self, x: _T) -> _P: ...
-    def back(self, y: _P) -> _T: ...
+class ValueMapper(t.Protocol[T, P]):
+    def forward(self, x: T) -> P: ...
+    def back(self, y: P) -> T: ...
 
 
 class Scale(t.NamedTuple):
@@ -165,7 +165,7 @@ def bftype_has_children_with_default(bftype: BFType) -> bool:
             return is_provided(inner.default) or bftype_has_children_with_default(inner)
 
 
-Field = t.Annotated[_T, "BFTypeDisguised"]
+Field = t.Annotated[T, "BFTypeDisguised"]
 
 
 def disguise(x: BFType) -> Field[t.Any]:
@@ -846,24 +846,24 @@ def bitfield_field(
 
 @t.overload
 def list_field(
-    item: t.Type[_T] | Field[_T],
+    item: t.Type[T] | Field[T],
     n_items: int, *,
-    default: t.List[_T]
-) -> Field[t.List[_T]]: ...
+    default: t.List[T]
+) -> Field[t.List[T]]: ...
 
 
 @t.overload
 def list_field(
-    item: t.Type[_T] | Field[_T],
+    item: t.Type[T] | Field[T],
     n_items: int
-) -> Field[t.List[_T]]: ...
+) -> Field[t.List[T]]: ...
 
 
 def list_field(
-    item: t.Type[_T] | Field[_T],
+    item: t.Type[T] | Field[T],
     n_items: int, *,
-    default: t.List[_T] | ellipsis = ...
-) -> Field[t.List[_T]]:
+    default: t.List[T] | ellipsis = ...
+) -> Field[t.List[T]]:
 
     d = ellipsis_to_not_provided(default)
 
@@ -875,41 +875,41 @@ def list_field(
 
 
 def lit_field(
-    field: Field[_T],
+    field: Field[T],
     *,
-    default: _P
-) -> Field[_P]:
+    default: P
+) -> Field[P]:
     return disguise(BFLit(undisguise(field), default))
 
 
 @t.overload
 def map_field(
-    field: Field[_T],
-    vm: ValueMapper[_T, _P], *,
-    default: _P,
-) -> Field[_P]: ...
+    field: Field[T],
+    vm: ValueMapper[T, P], *,
+    default: P,
+) -> Field[P]: ...
 
 
 @t.overload
 def map_field(
-    field: Field[_T],
-    vm: ValueMapper[_T, _P],
-) -> Field[_P]: ...
+    field: Field[T],
+    vm: ValueMapper[T, P],
+) -> Field[P]: ...
 
 
 def map_field(
-    field: Field[_T],
-    vm: ValueMapper[_T, _P], *,
-    default: _P | ellipsis = ...
-) -> Field[_P]:
+    field: Field[T],
+    vm: ValueMapper[T, P], *,
+    default: P | ellipsis = ...
+) -> Field[P]:
     return disguise(BFMap(undisguise(field), vm, ellipsis_to_not_provided(default)))
 
 
 def _bf_map_helper(
-    field: Field[_T],
-    vm: ValueMapper[_T, _P], *,
-    default: _P | NotProvided = NOT_PROVIDED,
-) -> Field[_P]:
+    field: Field[T],
+    vm: ValueMapper[T, P], *,
+    default: P | NotProvided = NOT_PROVIDED,
+) -> Field[P]:
     if is_provided(default):
         return map_field(field, vm, default=default)
     else:
@@ -918,36 +918,36 @@ def _bf_map_helper(
 
 @t.overload
 def dynamic_field(
-    fn: t.Callable[[t.Any], t.Type[_T] | Field[_T]] |
-    t.Callable[[t.Any, int], t.Type[_T] | Field[_T]], *,
-    default: _T
-) -> Field[_T]: ...
+    fn: t.Callable[[t.Any], t.Type[T] | Field[T]] |
+    t.Callable[[t.Any, int], t.Type[T] | Field[T]], *,
+    default: T
+) -> Field[T]: ...
 
 
 @t.overload
 def dynamic_field(
-    fn: t.Callable[[t.Any], t.Type[_T] | Field[_T]] |
-    t.Callable[[t.Any, int], t.Type[_T] | Field[_T]]
-) -> Field[_T]: ...
+    fn: t.Callable[[t.Any], t.Type[T] | Field[T]] |
+    t.Callable[[t.Any, int], t.Type[T] | Field[T]]
+) -> Field[T]: ...
 
 
 def dynamic_field(
-    fn: t.Callable[[t.Any], t.Type[_T] | Field[_T]] |
-        t.Callable[[t.Any, int], t.Type[_T] | Field[_T]], *,
-    default: _T | ellipsis = ...
-) -> Field[_T]:
+    fn: t.Callable[[t.Any], t.Type[T] | Field[T]] |
+        t.Callable[[t.Any, int], t.Type[T] | Field[T]], *,
+    default: T | ellipsis = ...
+) -> Field[T]:
     n_params = len(inspect.signature(fn).parameters)
     match n_params:
         case 1:
             fn = t.cast(
-                t.Callable[[t.Any], t.Type[_T] | Field[_T]],
+                t.Callable[[t.Any], t.Type[T] | Field[T]],
                 fn
             )
             return disguise(BFDynSelf(fn, default))
         case 2:
             fn = t.cast(
                 t.Callable[
-                    [t.Any, int], t.Type[_T] | Field[_T]
+                    [t.Any, int], t.Type[T] | Field[T]
                 ], fn
             )
             return disguise(BFDynSelfN(fn, default))
