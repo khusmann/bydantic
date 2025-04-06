@@ -935,9 +935,6 @@ def map_field(
         print(foo3) # Foo(a=1, b=0.5)
         print(foo3.to_bytes()) # b'\\x11'
         ```
-
-
-
     """
     return disguise(BFMap(undisguise(field), vm, ellipsis_to_not_provided(default)))
 
@@ -958,6 +955,43 @@ def dynamic_field(
         t.Callable[[t.Any, int], t.Type[T] | Field[T]], *,
     default: T | ellipsis = ...
 ) -> Field[T]:
+    """ A field type that can be decided at runtime, based on the values of
+    already-parsed fields, or the number of bits remaining in the stream.
+
+    Note that the discriminator function provided can be either a one-argument or two-argument
+    function. If a one-argument function is provided, it will be called with an intermeditate
+    Bitfield object with the fields that have been parsed so far. If a two-argument function is
+    the first argument will be the intermediate Bitfield object and the second
+    argument will be the number of bits remaining in the stream. The function
+    should use this information to return a valid field type to use for the field.
+
+    Args:
+        fn (t.Callable[[t.Any], t.Type[T] | Field[T]] | t.Callable[[t.Any, int], t.Type[T] | Field[T]])):
+            A one or two-argument function that returns the field type to use for the field.
+        default (T | ellipsis): An optional default value to use when constructing
+            the field in a new object.
+
+    Returns:
+        Field[T]: A field that represents a dynamic field.
+
+    Example:
+        ```python
+        import bydantic as bd
+        import typing as t
+
+        class Foo(bd.Bitfield):
+            a: int = bd.uint_field(8)
+            b: int | bytes = bd.dynamic_field(
+                lambda x: bd.uint_field(8) if x.a else bd.bytes_field(n_bytes=1)
+            )
+
+        foo = Foo.from_bytes_exact(b'\\x01\\x02')
+        print(foo) # Foo(a=1, b=2)
+
+        foo2 = Foo.from_bytes_exact(b'\\x00A')
+        print(foo2) # Foo(a=0, b=b'A')
+        ```
+    """
     n_params = len(inspect.signature(fn).parameters)
     match n_params:
         case 1:
