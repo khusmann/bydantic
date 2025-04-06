@@ -187,7 +187,7 @@ def undisguise(x: Field[t.Any]) -> BFType:
             return undisguise(bool_field())
 
     if isinstance(x, bytes):
-        return undisguise(lit_field(bytes_field(n_bytes=len(x)), default=x))
+        return undisguise(const_field(bytes_field(n_bytes=len(x)), default=x))
 
     if x is None:
         return undisguise(none_field(default=None))
@@ -580,7 +580,7 @@ def lit_uint_field(n: int, *, default: LiteralIntT) -> Field[LiteralIntT]:
         raise ValueError(
             f"expected default to fit in {n} bits, got {default}"
         )
-    return lit_field(uint_field(n), default=default)
+    return const_field(uint_field(n), default=default)
 
 
 def lit_int_field(n: int, *, default: LiteralIntT) -> Field[LiteralIntT]:
@@ -615,7 +615,7 @@ def lit_int_field(n: int, *, default: LiteralIntT) -> Field[LiteralIntT]:
         raise ValueError(
             f"expected signed default to fit in {n} bits, got {default}"
         )
-    return lit_field(int_field(n), default=default)
+    return const_field(int_field(n), default=default)
 
 
 def none_field(*, default: None | ellipsis = ...) -> Field[None]:
@@ -791,12 +791,12 @@ def list_field(
     return disguise(BFList(undisguise(item), n_items, d))
 
 
-def lit_field(
+def const_field(
     field: Field[T],
     *,
     default: P
 ) -> Field[P]:
-    """ A field type that represents a literal (or constant) value.
+    """ A field type that represents a constant value.
 
     This field type is most useful for parsing fixed values within
     a bitfield. (e.g. a fixed-length header field or padding bits)
@@ -806,7 +806,7 @@ def lit_field(
         default (P): The literal value expected from the field.
 
     Returns:
-        Field[P]: A field that represents a literal value.
+        Field[P]: A field that represents a constant value.
 
     Example:
         ```python
@@ -814,8 +814,8 @@ def lit_field(
         import typing as t
 
         class Foo(bd.Bitfield):
-            a: t.Literal[1] = bd.lit_field(bd.uint_field(4), default=1)
-            b: t.Literal[2] = bd.lit_field(bd.uint_field(4), default=2)
+            a: t.Literal[1] = bd.const_field(bd.uint_field(4), default=1)
+            b: t.Literal[2] = bd.const_field(bd.uint_field(4), default=2)
 
         foo = Foo()
         print(foo) # Foo(a=1, b=2)
@@ -893,7 +893,7 @@ class BitfieldConfig:
         none_field,
         bits_field,
         bitfield_field,
-        lit_field,
+        const_field,
         list_field,
         dynamic_field,
         map_field,
