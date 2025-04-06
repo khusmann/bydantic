@@ -178,11 +178,12 @@ def test_kitchen_sink():
         if x.ab == 1:
             return bd.list_field(bd.map_field(bd.uint_field(5), bd.Scale(100)), 1)
         else:
-            return bd.const_field(bd.uint_field(5), default=10)
+            return bd._lit_field_helper(bd.uint_field(5), default=10)
 
     class Foo(bd.Bitfield):
         a: float = bd.map_field(bd.uint_field(2), bd.Scale(1 / 2))
-        _pad: t.Literal[0x5] = bd.const_field(bd.uint_field(3), default=0x5)
+        _pad: t.Literal[0x5] = bd._lit_field_helper(
+            bd.uint_field(3), default=0x5)
         ff: Baz
         ay: t.Literal[b'world'] = b'world'
         ab: int = bd.uint_field(10)
@@ -193,7 +194,7 @@ def test_kitchen_sink():
         c: t.Literal[10] | list[float] | Baz = bd.dynamic_field(foo)
         d: t.List[int] = bd.list_field(bd.uint_field(10), 3)
         e: t.List[Baz] = bd.list_field(Baz, 3)
-        f: t.Literal["Hello"] = bd.const_field(
+        f: t.Literal["Hello"] = bd._lit_field_helper(
             bd.str_field(n_bytes=5), default="Hello"
         )
         h: t.Literal[b"Hello"] = b"Hello"
@@ -224,7 +225,7 @@ def test_default_len_err():
     class Work(bd.Bitfield):
         a: str = bd.str_field(n_bytes=4, default="ทt")
         b: bytes = bd.bytes_field(n_bytes=3, default=b"abc")
-        c: t.Literal["ทt"] = bd.const_field(
+        c: t.Literal["ทt"] = bd._lit_field_helper(
             bd.str_field(n_bytes=4), default="ทt"
         )
         d: t.List[int] = bd.list_field(

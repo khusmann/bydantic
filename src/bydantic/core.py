@@ -187,7 +187,10 @@ def undisguise(x: Field[t.Any]) -> BFType:
             return undisguise(bool_field())
 
     if isinstance(x, bytes):
-        return undisguise(const_field(bytes_field(n_bytes=len(x)), default=x))
+        return undisguise(lit_bytes_field(default=x))
+
+    if isinstance(x, str):
+        return undisguise(lit_str_field(default=x))
 
     if x is None:
         return undisguise(none_field(default=None))
@@ -541,83 +544,6 @@ def int_enum_field(n: int, enum: t.Type[IntEnumT], *, default: IntEnumT | ellips
     return _bf_map_helper(int_field(n), IntAsEnum(), default=ellipsis_to_not_provided(default))
 
 
-LiteralIntT = t.TypeVar("LiteralIntT", bound=int)
-
-
-def lit_uint_field(n: int, *, default: LiteralIntT) -> Field[LiteralIntT]:
-    """ A literal unsigned integer field type.
-
-    Args:
-        n (int): The number of bits used to represent the unsigned integer.
-        default (LiteralIntT): The literal default value to use when constructing the field in a new object.
-            (Required to infer the literal type).
-
-    Returns:
-        Field[LiteralIntT]: A field that represents a literal unsigned integer.
-
-    Example:
-        ```python
-        import bydantic as bd
-        import typing as t
-
-        class Foo(bd.Bitfield):
-            a: t.Literal[1] = bd.lit_uint_field(4, default=1)
-            b: t.Literal[2] = bd.lit_uint_field(4, default=2)
-
-        foo = Foo()
-        print(foo) # Foo(a=1, b=2)
-        print(foo.to_bytes()) # b'\\x12'
-
-        foo2 = Foo.from_bytes_exact(b'\\x12')
-        print(foo2) # Foo(a=1, b=2)
-        ```
-    """
-    if default < 0:
-        raise ValueError(
-            f"expected default to be non-negative, got {default}"
-        )
-    if is_int_too_big(default, n, signed=False):
-        raise ValueError(
-            f"expected default to fit in {n} bits, got {default}"
-        )
-    return const_field(uint_field(n), default=default)
-
-
-def lit_int_field(n: int, *, default: LiteralIntT) -> Field[LiteralIntT]:
-    """ A literal signed integer field type.
-
-    Args:
-        n (int): The number of bits used to represent the signed integer.
-        default (LiteralIntT): The literal default value to use when constructing the field in a new object.
-            (Required to infer the literal type).
-
-    Returns:
-        Field[LiteralIntT]: A field that represents a literal signed integer.
-
-    Example:
-        ```python
-        import bydantic as bd
-        import typing as t
-
-        class Foo(bd.Bitfield):
-            a: t.Literal[-1] = bd.lit_int_field(4, default=-1)
-            b: t.Literal[2] = bd.lit_int_field(4, default=2)
-
-        foo = Foo()
-        print(foo) # Foo(a=-1, b=2)
-        print(foo.to_bytes()) # b'\\xf2'
-
-        foo2 = Foo.from_bytes_exact(b'\\xf2')
-        print(foo2) # Foo(a=-1, b=2)
-        ```
-    """
-    if is_int_too_big(default, n, signed=True):
-        raise ValueError(
-            f"expected signed default to fit in {n} bits, got {default}"
-        )
-    return const_field(int_field(n), default=default)
-
-
 def none_field(*, default: None | ellipsis = ...) -> Field[None]:
     """ A field type that represents no data.
 
@@ -743,6 +669,174 @@ def bitfield_field(
     return disguise(BFBitfield(cls, n, default=ellipsis_to_not_provided(default)))
 
 
+def _lit_field_helper(
+    field: Field[T],
+    *,
+    default: P
+) -> Field[P]:
+    return disguise(BFLit(undisguise(field), default))
+
+
+LiteralIntT = t.TypeVar("LiteralIntT", bound=int)
+LiteralBytesT = t.TypeVar("LiteralBytesT", bound=bytes)
+LiteralStrT = t.TypeVar("LiteralStrT", bound=str)
+
+
+def lit_uint_field(n: int, *, default: LiteralIntT) -> Field[LiteralIntT]:
+    """ A literal unsigned integer field type.
+
+    Args:
+        n (int): The number of bits used to represent the unsigned integer.
+        default (LiteralIntT): The literal default value to use when constructing the field in a new object.
+            (Required to infer the literal type).
+
+    Returns:
+        Field[LiteralIntT]: A field that represents a literal unsigned integer.
+
+    Example:
+        ```python
+        import bydantic as bd
+        import typing as t
+
+        class Foo(bd.Bitfield):
+            a: t.Literal[1] = bd.lit_uint_field(4, default=1)
+            b: t.Literal[2] = bd.lit_uint_field(4, default=2)
+
+        foo = Foo()
+        print(foo) # Foo(a=1, b=2)
+        print(foo.to_bytes()) # b'\\x12'
+
+        foo2 = Foo.from_bytes_exact(b'\\x12')
+        print(foo2) # Foo(a=1, b=2)
+        ```
+    """
+    if default < 0:
+        raise ValueError(
+            f"expected default to be non-negative, got {default}"
+        )
+    if is_int_too_big(default, n, signed=False):
+        raise ValueError(
+            f"expected default to fit in {n} bits, got {default}"
+        )
+    return _lit_field_helper(uint_field(n), default=default)
+
+
+def lit_int_field(n: int, *, default: LiteralIntT) -> Field[LiteralIntT]:
+    """ A literal signed integer field type.
+
+    Args:
+        n (int): The number of bits used to represent the signed integer.
+        default (LiteralIntT): The literal default value to use when constructing the field in a new object.
+            (Required to infer the literal type).
+
+    Returns:
+        Field[LiteralIntT]: A field that represents a literal signed integer.
+
+    Example:
+        ```python
+        import bydantic as bd
+        import typing as t
+
+        class Foo(bd.Bitfield):
+            a: t.Literal[-1] = bd.lit_int_field(4, default=-1)
+            b: t.Literal[2] = bd.lit_int_field(4, default=2)
+
+        foo = Foo()
+        print(foo) # Foo(a=-1, b=2)
+        print(foo.to_bytes()) # b'\\xf2'
+
+        foo2 = Foo.from_bytes_exact(b'\\xf2')
+        print(foo2) # Foo(a=-1, b=2)
+        ```
+    """
+    if is_int_too_big(default, n, signed=True):
+        raise ValueError(
+            f"expected signed default to fit in {n} bits, got {default}"
+        )
+    return _lit_field_helper(int_field(n), default=default)
+
+
+def lit_bytes_field(
+    *, default: LiteralBytesT
+) -> Field[LiteralBytesT]:
+    """ A literal bytes field type.
+
+    Args:
+        default (LiteralBytesT): The literal default value to use when constructing the field in a new object.
+            (Required to infer the literal type).
+
+    Returns:
+        Field[LiteralBytesT]: A field that represents a literal bytes.
+
+    Example:
+        ```python
+        import bydantic as bd
+        import typing as t
+
+        class Foo(bd.Bitfield):
+            a: t.Literal[b'xy'] = bd.lit_bytes_field(default=b'xy')
+            b: t.Literal[b'uv'] = bd.lit_bytes_field(default=b'uv')
+
+        foo = Foo()
+        print(foo) # Foo(a=b'xy', b=b'uv')
+        print(foo.to_bytes()) # b'xyuv'
+
+        foo2 = Foo.from_bytes_exact(b'xyuv')
+        print(foo2) # Foo(a=b'xy', b=b'uv')
+
+        # Note that the following shortcut may be alternatively used
+        # in definitions:
+
+        class Shortcut(bd.Bitfield):
+            a: t.Literal[b'xy'] = b'xy'
+            b: t.Literal[b'uv'] = b'uv'
+        ```
+    """
+    return _lit_field_helper(bytes_field(n_bytes=len(default)), default=default)
+
+
+def lit_str_field(
+    *, encoding: str = "utf-8", default: LiteralStrT
+) -> Field[LiteralStrT]:
+    """ A literal string field type.
+
+    Args:
+        default (LiteralStrT): The literal default value to use when constructing the field in a new object.
+            (Required to infer the literal type).
+
+    Returns:
+        Field[LiteralStrT]: A field that represents a literal string.
+
+    Example:
+        ```python
+        import bydantic as bd
+        import typing as t
+
+        class Foo(bd.Bitfield):
+            a: t.Literal["xy"] = bd.lit_str_field(encoding="utf-8", default="xy")
+            b: t.Literal["uv"] = bd.lit_str_field(default="uv")
+
+        foo = Foo()
+        print(foo) # Foo(a='xy', b='uv')
+        print(foo.to_bytes()) # b'xyuv'
+
+        foo2 = Foo.from_bytes_exact(b'xyuv')
+        print(foo2) # Foo(a="xy", b="uv")
+
+        # Note that the following shortcut may be alternatively used
+        # in definitions:
+
+        class Shortcut(bd.Bitfield):
+            a: t.Literal["xy"] = "xy"
+            b: t.Literal["uv"] = "uv"
+        ```
+    """
+    return _lit_field_helper(
+        str_field(n_bytes=len(default.encode(encoding)), encoding=encoding),
+        default=default
+    )
+
+
 def list_field(
     item: t.Type[T] | Field[T],
     n_items: int, *,
@@ -789,42 +883,6 @@ def list_field(
             f"expected default list of length {n_items}, got {len(d)} ({d!r})"
         )
     return disguise(BFList(undisguise(item), n_items, d))
-
-
-def const_field(
-    field: Field[T],
-    *,
-    default: P
-) -> Field[P]:
-    """ A field type that represents a constant value.
-
-    This field type is most useful for parsing fixed values within
-    a bitfield. (e.g. a fixed-length header field or padding bits)
-
-    Args:
-        field (Field[T]): A field type to parse the literal value.
-        default (P): The literal value expected from the field.
-
-    Returns:
-        Field[P]: A field that represents a constant value.
-
-    Example:
-        ```python
-        import bydantic as bd
-        import typing as t
-
-        class Foo(bd.Bitfield):
-            a: t.Literal[1] = bd.const_field(bd.uint_field(4), default=1)
-            b: t.Literal[2] = bd.const_field(bd.uint_field(4), default=2)
-
-        foo = Foo()
-        print(foo) # Foo(a=1, b=2)
-        print(foo.to_bytes()) # b'\\x12'
-
-        foo2 = Foo.from_bytes_exact(b'\\x12') # Note that any other bytes will throw an error
-        print(foo2) # Foo(a=1, b=2)
-    """
-    return disguise(BFLit(undisguise(field), default))
 
 
 def map_field(
@@ -893,7 +951,7 @@ class BitfieldConfig:
         none_field,
         bits_field,
         bitfield_field,
-        const_field,
+        _lit_field_helper,
         list_field,
         dynamic_field,
         map_field,

@@ -10,10 +10,6 @@ constructed via [field type combinators](#field-type-combinators).
 
 ### ::: bydantic.int_field
 
-### ::: bydantic.lit_uint_field
-
-### ::: bydantic.lit_int_field
-
 ### ::: bydantic.bool_field
 
 ### ::: bydantic.bytes_field
@@ -30,11 +26,24 @@ constructed via [field type combinators](#field-type-combinators).
 
 ### ::: bydantic.bitfield_field
 
+## Literal Field Types
+
+These field types are used to define fields with literal types. They are most
+often useful for fixed-length headers, padding, etc.
+
+### ::: bydantic.lit_uint_field
+
+### ::: bydantic.lit_int_field
+
+### ::: bydantic.lit_bytes_field
+
+### ::: bydantic.lit_str_field
+
 ## Field Type Combinators
 
-### ::: bydantic.list_field
+These field types can be used build new field types from other field types.
 
-### ::: bydantic.lit_field
+### ::: bydantic.list_field
 
 ### ::: bydantic.map_field
 
