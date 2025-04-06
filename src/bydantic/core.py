@@ -5,6 +5,7 @@ from dataclasses import dataclass, field as dataclass_field
 from typing_extensions import dataclass_transform, TypeVar as TypeVarDefault, Self
 import typing as t
 import inspect
+import numbers
 
 from enum import IntEnum, IntFlag
 
@@ -1301,8 +1302,15 @@ def _write_bftype(
 
             # If the first arg of the mappers transform has a type hint,
             # check that the value is of that type
+            #
+            # (But exclude numbers, because the implicit conversions allowed
+            # by the type hints are hard to check here)
             if is_provided(expected_type) and isinstance(expected_type, t.Type):
-                if not isinstance(value, expected_type):
+
+                if (
+                    not isinstance(value, expected_type) and
+                    not issubclass(expected_type, numbers.Number)
+                ):
                     raise TypeError(
                         f"expected {expected_type.__name__}, got {type(value).__name__}"
                     )
