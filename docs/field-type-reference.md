@@ -32,9 +32,9 @@ constructed via [field type combinators](#field-type-combinators).
 
 ## Field Type Combinators
 
-### ::: bydantic.lit_field
-
 ### ::: bydantic.list_field
+
+### ::: bydantic.lit_field
 
 ### ::: bydantic.map_field
 

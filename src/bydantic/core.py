@@ -748,6 +748,39 @@ def list_field(
     n_items: int, *,
     default: t.List[T] | ellipsis = ...
 ) -> Field[t.List[T]]:
+    """ A field type that represents a list of items.
+
+    Args:
+        item (t.Type[T] | Field[T]): The type of items in the list. In addition to fields,
+            Bitfield classes can also be used here (provided they are non-dynamic).
+        n_items (int): The number of items in the list.
+        default (t.List[T] | ellipsis): An optional default value to use when constructing
+            the field in a new object.
+
+    Returns:
+        Field[t.List[T]]: A field that represents a list of items.
+
+    Example:
+        ```python
+        import bydantic as bd
+        import typing as t
+
+        class Foo(bd.Bitfield):
+            a: int = bd.uint_field(4)
+            b: t.List[int] = bd.list_field(bd.uint_field(4), 3, default=[1, 2, 3])
+
+        foo = Foo(a=1, b=[0, 1, 2])
+        print(foo) # Foo(a=1, b=[0, 1, 2])
+        print(foo.to_bytes()) # b'\\x10\\x12'
+
+        foo2 = Foo.from_bytes_exact(b'\\x10\\x12')
+        print(foo2) # Foo(a=1, b=[0, 1, 2])
+
+        foo3 = Foo(a=1) # b is set to [1, 2, 3] by default
+        print(foo3) # Foo(a=1, b=[1, 2, 3])
+        print(foo3.to_bytes()) # b'\\x11#'
+        ```
+    """
 
     d = ellipsis_to_not_provided(default)
 
@@ -763,6 +796,34 @@ def lit_field(
     *,
     default: P
 ) -> Field[P]:
+    """ A field type that represents a literal (or constant) value.
+
+    This field type is most useful for parsing fixed values within
+    a bitfield. (e.g. a fixed-length header field or padding bits)
+
+    Args:
+        field (Field[T]): A field type to parse the literal value.
+        default (P): The literal value expected from the field.
+
+    Returns:
+        Field[P]: A field that represents a literal value.
+
+    Example:
+        ```python
+        import bydantic as bd
+        import typing as t
+
+        class Foo(bd.Bitfield):
+            a: t.Literal[1] = bd.lit_field(bd.uint_field(4), default=1)
+            b: t.Literal[2] = bd.lit_field(bd.uint_field(4), default=2)
+
+        foo = Foo()
+        print(foo) # Foo(a=1, b=2)
+        print(foo.to_bytes()) # b'\\x12'
+
+        foo2 = Foo.from_bytes_exact(b'\\x12') # Note that any other bytes will throw an error
+        print(foo2) # Foo(a=1, b=2)
+    """
     return disguise(BFLit(undisguise(field), default))
 
 
