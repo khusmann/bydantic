@@ -890,6 +890,54 @@ def map_field(
     vm: ValueMapper[T, P], *,
     default: P | ellipsis = ...
 ) -> Field[P]:
+    """ A field type for creating transformations of values.
+
+    Transformations are done via the `ValueMapper` protocol, an object
+    defined with `forward` and `back` methods. The `forward` method
+    is used to transform the value when deserializing the field from
+    bytes, and the `back` method is used to reverse this transformation
+    when serializing the field back to bytes.
+
+    Several built-in value mappers are provided, including `Scale` and
+    `IntScale`, for scaling values by a given float or int factor, respectively.
+
+    Args:
+        field (Field[T]): The field to transform.
+        vm (ValueMapper[T, P]): The value mapper to use for the transformation.
+        default (P | ellipsis): An optional default value to use when constructing
+            the field in a new object.
+
+    Returns:
+        Field[P]: A field that represents the transformed value.
+
+    Example:
+        ```python
+        import bydantic as bd
+        import typing as t
+
+        class Foo(bd.Bitfield):
+            a: int = bd.uint_field(4)
+            b: float = bd.map_field(
+                bd.uint_field(4),
+                bd.Scale(0.5),
+                default=0.5
+            )
+
+        foo = Foo(a=1, b=1.5)
+        print(foo) # Foo(a=1, b=1.5)
+        print(foo.to_bytes()) # b'\\x13'
+
+        foo2 = Foo.from_bytes_exact(b'\\x13')
+        print(foo2) # Foo(a=1, b=1.5)
+
+        foo3 = Foo(a=1) # b is set to 0.5 by default
+        print(foo3) # Foo(a=1, b=0.5)
+        print(foo3.to_bytes()) # b'\\x11'
+        ```
+
+
+
+    """
     return disguise(BFMap(undisguise(field), vm, ellipsis_to_not_provided(default)))
 
 
