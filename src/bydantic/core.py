@@ -52,13 +52,33 @@ P = t.TypeVar("P")
 
 
 class ValueMapper(t.Protocol[T, P]):
+    """
+    A protocol for transforming values during serialization / deserialization
+    via [`map_field`](field-type-reference.md#bydantic.map_field).
+    """
+
     def forward(self, x: T) -> P: ...
+    """
+    Transform the value from type T to type P when deserializing.
+    """
+
     def back(self, y: P) -> T: ...
+    """
+    Transform the value from type P to type T when serializing.
+    """
 
 
 class Scale(t.NamedTuple):
+    """
+    A value mapper that scales a value by a given factor,
+    resulting in a float value.
+    """
+
     by: float
+    """The factor to scale by."""
+
     n_digits: int | None = None
+    """The number of digits to round to. If None, no rounding is done."""
 
     def forward(self, x: int):
         value = x * self.by
@@ -69,7 +89,13 @@ class Scale(t.NamedTuple):
 
 
 class IntScale(t.NamedTuple):
+    """
+    A value mapper that scales a value by a given factor,
+    resulting in an integer value.
+    """
+
     by: int
+    """The factor to scale by."""
 
     def forward(self, x: int):
         return x * self.by
@@ -903,8 +929,10 @@ def map_field(
     bytes, and the `back` method is used to reverse this transformation
     when serializing the field back to bytes.
 
-    Several built-in value mappers are provided, including `Scale` and
-    `IntScale`, for scaling values by a given float or int factor, respectively.
+    Several built-in value mappers are provided, including
+    [`Scale`](bitfield-class-reference.md#bydantic.Scale) and
+    [`IntScale`](bitfield-class-reference.md#bydantic.IntScale),
+    for scaling values by a given float or int factor, respectively.
 
     Args:
         field (Field[T]): The field to transform.
@@ -1020,7 +1048,16 @@ ContextT = TypeVarDefault("ContextT", default=None)
 
 @dataclass()
 class BitfieldConfig:
+    """
+    A configuration object for the bitfield. This can be used to
+    configure the bitfield's behavior, such as whether to reorder
+    bits when serializing and deserializing.
+    """
+
     reorder_bits: t.Sequence[int] = dataclass_field(default_factory=list)
+    """
+    A list of bit positions to reorder when serializing and deserializing.
+    """
 
 
 @dataclass_transform(
@@ -1045,10 +1082,24 @@ class BitfieldConfig:
     )
 )
 class Bitfield(t.Generic[ContextT]):
+    """A base class for creating bitfields."""
+
     __bydantic_fields__: t.ClassVar[t.Dict[str, BFType]] = {}
+
     bitfield_config: t.ClassVar[BitfieldConfig] = BitfieldConfig()
+    """
+    A configuration object for the bitfield. This can be used to
+    configure the bitfield's behavior, such as whether to reorder
+    bits when serializing and deserializing.
+    """
+
     __BYDANTIC_CONTEXT_STR__: t.ClassVar[str] = "bitfield_context"
+
     bitfield_context: ContextT | None = None
+    """
+    A context object that can be referenced by dynamic fields while
+    serializing and deserializing the bitfield.
+    """
 
     def __init__(self, **kwargs: t.Any):
         for name, field in self.__bydantic_fields__.items():
@@ -1082,6 +1133,13 @@ class Bitfield(t.Generic[ContextT]):
 
     @classmethod
     def length(cls) -> int | None:
+        """
+        Get the length of a bitfield in bits. If the bitfield has dynamic fields, `None`
+        is returned.
+
+        Returns:
+            int | None: The length of the bitfield in bits, or `None` if it has dynamic fields.
+        """
         acc = 0
         for field in cls.__bydantic_fields__.values():
             field_len = bftype_length(field)
@@ -1092,6 +1150,20 @@ class Bitfield(t.Generic[ContextT]):
 
     @classmethod
     def from_bits_exact(cls, bits: t.Sequence[bool], opts: ContextT | None = None):
+        """
+        Parses a bitfield from a sequence of bits, returning the parsed object.
+        Raises a ValueError if there are any bits left over after parsing.
+
+        Args:
+            bits (t.Sequence[bool]): The bits to parse.
+            opts (ContextT | None): An optional context object to use when parsing.
+
+        Returns:
+            Self: The parsed object.
+
+        Raises:
+            ValueError: If there are any bits left over after parsing.
+        """
         out, remaining = cls.from_bits(bits, opts)
 
         if remaining:
@@ -1103,6 +1175,20 @@ class Bitfield(t.Generic[ContextT]):
 
     @classmethod
     def from_bytes_exact(cls, data: t.ByteString, opts: ContextT | None = None):
+        """
+        Parses a bitfield from a byte string, returning the parsed object.
+        Raises a ValueError if there are any bytes left over after parsing.
+
+        Args:
+            data (t.ByteString): The bytes to parse.
+            opts (ContextT | None): An optional context object to use when parsing.
+
+        Returns:
+            Self: The parsed object.
+
+        Raises:
+            ValueError: If there are any bytes left over after parsing.
+        """
         out, remaining = cls.from_bytes(data, opts)
 
         if remaining:
@@ -1114,6 +1200,18 @@ class Bitfield(t.Generic[ContextT]):
 
     @classmethod
     def from_bits(cls, bits: t.Sequence[bool], opts: ContextT | None = None) -> t.Tuple[Self, t.Tuple[bool, ...]]:
+        """
+        Parse a bitfield from a sequence of bits, returning the parsed object and
+        any remaining bits.
+
+        Args:
+            bits (t.Sequence[bool]): The bits to parse.
+            opts (ContextT | None): An optional context object to use when parsing.
+
+        Returns:
+            t.Tuple[Self, t.Tuple[bool, ...]]: A tuple containing the parsed object and
+                any remaining bits.
+        """
         out, stream = cls.__bydantic_read_stream__(
             BitstreamReader.from_bits(bits), opts
         )
@@ -1121,6 +1219,18 @@ class Bitfield(t.Generic[ContextT]):
 
     @classmethod
     def from_bytes(cls, data: t.ByteString, opts: ContextT | None = None) -> t.Tuple[Self, bytes]:
+        """ 
+        Parses a bitfield from a byte string, returning the parsed object and
+        any remaining bytes.
+
+        Args:
+            data (t.ByteString): The bytes to parse.
+            opts (ContextT | None): An optional context object to use when parsing.
+
+        Returns:
+            t.Tuple[Self, bytes]: A tuple containing the parsed object and
+                any remaining bytes.
+        """
         out, stream = cls.__bydantic_read_stream__(
             BitstreamReader.from_bytes(data), opts
         )
@@ -1133,6 +1243,24 @@ class Bitfield(t.Generic[ContextT]):
         opts: ContextT | None = None,
         consume_errors: bool = False
     ) -> t.Tuple[t.List[Self], bytes]:
+        """
+        Parses a batch of bitfields from a byte string, returning the parsed objects
+        and any remaining bytes. If `consume_errors` is True, any errors encountered
+        while parsing will be ignored and bytes will be consumed until the next
+        complete bitfield is found. If `consume_errors` is False, any errors will
+        be raised and parsing will stop.
+
+        Args:
+            data (t.ByteString): The bytes to parse.
+            opts (ContextT | None): An optional context object to use when parsing.
+            consume_errors (bool): Whether to consume errors or not.
+                If True, errors will be ignored and parsing will continue.
+                If False, errors will be raised and parsing will stop.
+
+        Returns:
+            t.Tuple[t.List[Self], bytes]: A tuple containing the parsed objects and
+                any remaining bytes.
+        """
         out: t.List[Self] = []
 
         stream = BitstreamReader.from_bytes(data)
@@ -1158,9 +1286,27 @@ class Bitfield(t.Generic[ContextT]):
         return out, stream.as_bytes()
 
     def to_bits(self, opts: ContextT | None = None) -> t.Tuple[bool, ...]:
+        """
+        Serializes the bitfield to a sequence of bits.
+
+        Args:
+            opts (ContextT | None): An optional context object to use when serializing.
+
+        Returns:
+            t.Tuple[bool, ...]: The serialized bitfield as a sequence of bits.
+        """
         return self.__bydantic_write_stream__(BitstreamWriter(), opts).as_bits()
 
     def to_bytes(self, opts: ContextT | None = None) -> bytes:
+        """
+        Serializes the bitfield to a byte string.
+
+        Args:
+            opts (ContextT | None): An optional context object to use when serializing.
+
+        Returns:
+            bytes: The serialized bitfield as a byte string.
+        """
         return self.__bydantic_write_stream__(BitstreamWriter(), opts).as_bytes()
 
     def __init_subclass__(cls):
