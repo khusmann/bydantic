@@ -57,28 +57,46 @@ class ValueMapper(t.Protocol[T, P]):
     via [`map_field`](field-type-reference.md#bydantic.map_field).
     """
 
-    def forward(self, x: T) -> P: ...
-    """
-    Transform the value from type T to type P when deserializing.
-    """
+    def forward(self, x: T) -> P:
+        """
+        Transform the value from type T to type P when deserializing the bitfield.
+        """
+        ...
 
-    def back(self, y: P) -> T: ...
-    """
-    Transform the value from type P to type T when serializing.
-    """
+    def back(self, y: P) -> T:
+        """
+        Transform the value from type P to type T when serializing the bitfield.
+        """
+        ...
 
 
 class Scale(t.NamedTuple):
     """
     A value mapper that scales a value by a given factor,
     resulting in a float value.
+
+    Attributes:
+        by (float): The factor to scale by.
+        n_digits (int | None): The number of digits to round to. If None, no rounding is done.
+
+    Example:
+        ```python
+        import bydantic as bd
+
+        class Foo(bd.Bitfield):
+            b: float = bd.map_field(bd.uint_field(8), bd.Scale(by=0.1))
+
+        foo = Foo(b=2)
+        print(foo) # Foo(b=0.2)
+
+        foo2 = Foo.from_bytes_exact(b'\\x02')
+        print(foo2) # Foo(b=0.2)
+        ```
     """
 
     by: float
-    """The factor to scale by."""
 
     n_digits: int | None = None
-    """The number of digits to round to. If None, no rounding is done."""
 
     def forward(self, x: int):
         value = x * self.by
@@ -92,10 +110,27 @@ class IntScale(t.NamedTuple):
     """
     A value mapper that scales a value by a given factor,
     resulting in an integer value.
+
+    Attributes:
+        by (int): The factor to scale by.
+
+    Example:
+        ```python
+        import bydantic as bd
+
+        class Foo(bd.Bitfield):
+            b: int = bd.map_field(bd.uint_field(8), bd.IntScale(by=10))
+
+        foo = Foo(b=20)
+        print(foo) # Foo(b=20)
+        print(foo.to_bytes()) # b'\\x02'
+
+        foo2 = Foo.from_bytes_exact(b'\\x02')
+        print(foo2) # Foo(b=20)
+        ```
     """
 
     by: int
-    """The factor to scale by."""
 
     def forward(self, x: int):
         return x * self.by

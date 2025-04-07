@@ -48,3 +48,16 @@ These field types can be used build new field types from other field types.
 ### ::: bydantic.map_field
 
 ### ::: bydantic.dynamic_field
+
+## Value Mappers
+
+`bydantic.map_field` uses the `ValueMapper` protocol for transforming values
+when serializing and deserializing and deserializing bitfields. This section
+describes the `ValueMapper` protocol and the built-in value mappers provided by
+`bydantic`.
+
+### ::: bydantic.ValueMapper
+
+### ::: bydantic.Scale
+
+### ::: bydantic.IntScale

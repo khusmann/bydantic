@@ -3,9 +3,3 @@
 ::: bydantic.Bitfield
 
 ::: bydantic.BitfieldConfig
-
-::: bydantic.ValueMapper
-
-::: bydantic.Scale
-
-::: bydantic.IntScale
