@@ -1152,7 +1152,8 @@ class Bitfield(t.Generic[ContextT]):
     bitfield_context: ContextT | None = None
     """
     A context object that can be referenced by dynamic fields while
-    serializing and deserializing the bitfield.
+    serializing and deserializing the bitfield. Set by `to_*` and
+    `from_*` methods when serializing and deserializing the bitfield.
     """
 
     def __init__(self, **kwargs: t.Any):
