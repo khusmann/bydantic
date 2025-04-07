@@ -1067,6 +1067,8 @@ class BitfieldConfig:
         int_field,
         lit_uint_field,
         lit_int_field,
+        lit_bytes_field,
+        lit_str_field,
         bool_field,
         bytes_field,
         str_field,
