@@ -622,7 +622,7 @@ def bitfield_field(
     Args:
         cls (t.Type[BitfieldT]): The Bitfield class to use for the field.
         n (int | ellipsis): The number of bits in the field. Note: this is optional
-            for non-dynamic bitfields because it can inferred from the class itself.
+            for bitfields without dynamic fields because it can inferred from the class itself.
         default (BitfieldT | ellipsis): An optional default value to use when constructing
             the field in a new object.
 
@@ -651,9 +651,13 @@ def bitfield_field(
         print(bar3) # Bar(c=Foo(a=1, b=0))
         print(bar3.to_bytes()) # b'\\x10\\x00'
 
-        # For non-dynamic bitfields, the size can be inferred:
+        # For bitfields without dynamic fields, the size can be inferred:
         class Baz(bd.Bitfield):
             c: Foo = bd.bitfield_field(Foo)
+
+        # Or, more concisely:
+        class Baz(bd.Bitfield):
+            c: Foo
 
         baz = Baz(c=Foo(a=1, b=2))
         print(baz) # Baz(c=Foo(a=1, b=2))
@@ -847,7 +851,7 @@ def list_field(
 
     Args:
         item (t.Type[T] | Field[T]): The type of items in the list. In addition to fields,
-            Bitfield classes can also be used here (provided they are non-dynamic).
+            Bitfield classes can also be returned (provided they don't have dynamic fields).
         n_items (int): The number of items in the list.
         default (t.List[T] | ellipsis): An optional default value to use when constructing
             the field in a new object.
