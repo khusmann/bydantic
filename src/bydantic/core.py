@@ -226,7 +226,8 @@ def undisguise(x: Field[t.Any]) -> BFType:
 
 
 def uint_field(n: int, *, default: int | ellipsis = ...) -> Field[int]:
-    """ An unsigned integer field type.
+    """
+    An unsigned integer field type.
 
     Args:
         n (int): The number of bits used to represent the unsigned integer.
@@ -271,7 +272,8 @@ def uint_field(n: int, *, default: int | ellipsis = ...) -> Field[int]:
 
 
 def int_field(n: int, *, default: int | ellipsis = ...) -> Field[int]:
-    """ A signed integer field type.
+    """
+    A signed integer field type.
 
     Args:
         n (int): The number of bits used to represent the signed integer.
@@ -332,7 +334,8 @@ def int_field(n: int, *, default: int | ellipsis = ...) -> Field[int]:
 
 
 def bool_field(*, default: bool | ellipsis = ...) -> Field[bool]:
-    """ A boolean field type. (Bit flag)
+    """
+    A boolean field type. (Bit flag)
 
     Args:
         default (bool | ellipsis): An optional default value to use when constructing the field in a new object.
@@ -372,7 +375,8 @@ def bool_field(*, default: bool | ellipsis = ...) -> Field[bool]:
 
 
 def bytes_field(*, n_bytes: int, default: bytes | ellipsis = ...) -> Field[bytes]:
-    """ A bytes field type.
+    """
+    A bytes field type.
 
     Args:
         n_bytes (int): The number of bytes in the field.
@@ -419,7 +423,8 @@ def bytes_field(*, n_bytes: int, default: bytes | ellipsis = ...) -> Field[bytes
 
 
 def str_field(*, n_bytes: int, encoding: str = "utf-8", default: str | ellipsis = ...) -> Field[str]:
-    """ A string field type.
+    """
+    A string field type.
 
     Args:
         n_bytes (int): The number of bytes in the field.
@@ -472,7 +477,8 @@ IntEnumT = t.TypeVar("IntEnumT", bound=IntEnum | IntFlag)
 
 
 def uint_enum_field(n: int, enum: t.Type[IntEnumT], *, default: IntEnumT | ellipsis = ...) -> Field[IntEnumT]:
-    """ An unsigned integer enum field type.
+    """
+    An unsigned integer enum field type.
 
     Args:
         enum (Type[IntEnumT]): The enum class to use for the field. (Must be a subclass of IntEnum or IntFlag)
@@ -527,7 +533,8 @@ def uint_enum_field(n: int, enum: t.Type[IntEnumT], *, default: IntEnumT | ellip
 
 
 def int_enum_field(n: int, enum: t.Type[IntEnumT], *, default: IntEnumT | ellipsis = ...) -> Field[IntEnumT]:
-    """ An signed integer enum field type.
+    """
+    An signed integer enum field type.
 
     Args:
         n (int): The number of bits used to represent the enum.
@@ -572,7 +579,8 @@ def int_enum_field(n: int, enum: t.Type[IntEnumT], *, default: IntEnumT | ellips
 
 
 def none_field(*, default: None | ellipsis = ...) -> Field[None]:
-    """ A field type that represents no data.
+    """
+    A field type that represents no data.
 
     This field type is most useful when paired with `dynamic_field` to create
     optional values in a Bitfield.
@@ -604,7 +612,8 @@ def none_field(*, default: None | ellipsis = ...) -> Field[None]:
 
 
 def bits_field(n: int, *, default: t.Sequence[bool] | ellipsis = ...) -> Field[t.Tuple[bool, ...]]:
-    """ A field type that represents a sequence of bits. (A tuple of booleans).
+    """
+    A field type that represents a sequence of bits. (A tuple of booleans).
 
     Args:
         n (int): The number of bits in the field.
@@ -643,7 +652,8 @@ def bitfield_field(
     n: int | ellipsis = ..., *,
     default: BitfieldT | ellipsis = ...
 ) -> Field[BitfieldT]:
-    """ A field type that represents a Bitfield.
+    """
+    A field type that represents a Bitfield.
 
     Args:
         cls (t.Type[BitfieldT]): The Bitfield class to use for the field.
@@ -714,7 +724,8 @@ LiteralStrT = t.TypeVar("LiteralStrT", bound=str)
 
 
 def lit_uint_field(n: int, *, default: LiteralIntT) -> Field[LiteralIntT]:
-    """ A literal unsigned integer field type.
+    """
+    A literal unsigned integer field type.
 
     Args:
         n (int): The number of bits used to represent the unsigned integer.
@@ -753,7 +764,8 @@ def lit_uint_field(n: int, *, default: LiteralIntT) -> Field[LiteralIntT]:
 
 
 def lit_int_field(n: int, *, default: LiteralIntT) -> Field[LiteralIntT]:
-    """ A literal signed integer field type.
+    """
+    A literal signed integer field type.
 
     Args:
         n (int): The number of bits used to represent the signed integer.
@@ -790,7 +802,8 @@ def lit_int_field(n: int, *, default: LiteralIntT) -> Field[LiteralIntT]:
 def lit_bytes_field(
     *, default: LiteralBytesT
 ) -> Field[LiteralBytesT]:
-    """ A literal bytes field type.
+    """
+    A literal bytes field type.
 
     Args:
         default (LiteralBytesT): The literal default value to use when constructing the field in a new object.
@@ -829,7 +842,8 @@ def lit_bytes_field(
 def lit_str_field(
     *, encoding: str = "utf-8", default: LiteralStrT
 ) -> Field[LiteralStrT]:
-    """ A literal string field type.
+    """
+    A literal string field type.
 
     Args:
         default (LiteralStrT): The literal default value to use when constructing the field in a new object.
@@ -873,7 +887,8 @@ def list_field(
     n_items: int, *,
     default: t.List[T] | ellipsis = ...
 ) -> Field[t.List[T]]:
-    """ A field type that represents a list of items.
+    """
+    A field type that represents a list of items.
 
     Args:
         item (t.Type[T] | Field[T]): The type of items in the list. In addition to fields,
@@ -921,7 +936,8 @@ def map_field(
     vm: ValueMapper[T, P], *,
     default: P | ellipsis = ...
 ) -> Field[P]:
-    """ A field type for creating transformations of values.
+    """
+    A field type for creating transformations of values.
 
     Transformations are done via the `ValueMapper` protocol, an object
     defined with `forward` and `back` methods. The `forward` method
@@ -987,7 +1003,8 @@ def dynamic_field(
         t.Callable[[t.Any, int], t.Type[T] | Field[T]], *,
     default: T | ellipsis = ...
 ) -> Field[T]:
-    """ A field type that can be decided at runtime, based on the values of
+    """
+    A field type that can be decided at runtime, based on the values of
     already-parsed fields, or the number of bits remaining in the stream.
 
     Note that the discriminator function provided can be either a one-argument or two-argument
