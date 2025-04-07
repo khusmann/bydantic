@@ -78,6 +78,7 @@ class Scale(t.NamedTuple):
     Attributes:
         by (float): The factor to scale by.
         n_digits (int | None): The number of digits to round to. If None, no rounding is done.
+            Default is None.
 
     Example:
         ```python
