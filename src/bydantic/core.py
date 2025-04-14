@@ -1297,21 +1297,14 @@ class Bitfield(t.Generic[ContextT]):
         cls,
         data: t.ByteString,
         opts: ContextT | None = None,
-        consume_errors: bool = False
     ) -> t.Tuple[t.List[Self], bytes]:
         """
         Parses a batch of bitfields from a byte string, returning the parsed objects
-        and any remaining bytes. If `consume_errors` is True, any errors encountered
-        while parsing will be ignored and bytes will be consumed until the next
-        complete bitfield is found. If `consume_errors` is False, any errors will
-        be raised and parsing will stop.
+        and any remaining bytes.
 
         Args:
             data (t.ByteString): The bytes to parse.
             opts (ContextT | None): An optional context object to use when parsing.
-            consume_errors (bool): Whether to consume errors or not.
-                If True, errors will be ignored and parsing will continue.
-                If False, errors will be raised and parsing will stop.
 
         Returns:
             t.Tuple[t.List[Self], bytes]: A tuple containing the parsed objects and
@@ -1328,9 +1321,6 @@ class Bitfield(t.Generic[ContextT]):
             except DeserializeFieldError as e:
                 if isinstance(e.inner, EOFError):
                     break
-
-                if consume_errors:
-                    _, stream = stream.take_bytes(1)
                 else:
                     raise
 
