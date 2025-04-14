@@ -39,8 +39,8 @@ Here's a simple example of how bydantic can be used:
 import bydantic as bd
 
 class Foo(bd.Bitfield):
-    a: int = bd.int_field(4)
-    b: int = bd.int_field(4)
+    a: int = bd.uint_field(4)
+    b: int = bd.uint_field(4)
     c: str = bd.str_field(n_bytes=1)
 ```
 
@@ -67,8 +67,8 @@ from __future__ import annotations
 import bydantic as bd
 
 class Foo(bd.Bitfield):
-    a: int = bd.int_field(4)
-    b: int = bd.int_field(4)
+    a: int = bd.uint_field(4)
+    b: int = bd.uint_field(4)
     c: str = bd.str_field(n_bytes=1)
 
 
