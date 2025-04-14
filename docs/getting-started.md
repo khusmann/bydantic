@@ -4,12 +4,24 @@ As a motivating example, let's suppose we have a little weather station that
 sends data over a serial connection. Say it uses a simple binary protocol that
 packs the following information into two bytes:
 
+```mermaid
+---
+title: "Weather Station Packet"
+---
+%%{init: {'theme': 'base', 'packet': { 'rowHeight': 50, 'bitWidth': 100, 'bitsPerRow': 8 }}}%%
+packet-beta
+0-5: "temperature"
+6-11: "wind_speed"
+12-14: "wind_direction"
+15: "sensor_error"
+```
+
 | Bits  | Field Name       | Size (bits) | Description                                 |
 | ----- | ---------------- | ----------- | ------------------------------------------- |
-| 15-10 | `temperature`    | 6           | Temperature in Celsius (signed int)         |
-| 9–4   | `wind_speed`     | 6           | Wind speed (km/h)                           |
-| 3–1   | `wind_direction` | 3           | Wind direction (0 = N, 1 = NE, ..., 7 = NW) |
-| 0     | `sensor_error`   | 1           | Sensor error flag (1 = error)               |
+| 0-5   | `temperature`    | 6           | Temperature in Celsius (signed int)         |
+| 6–11  | `wind_speed`     | 6           | Wind speed (km/h)                           |
+| 12–14 | `wind_direction` | 3           | Wind direction (0 = N, 1 = NE, ..., 7 = NW) |
+| 15    | `sensor_error`   | 1           | Sensor error flag (1 = error)               |
 
 Without a library like bydantic, parsing this information would require manual
 bit manipulation and byte handling. For example, you might do something like
