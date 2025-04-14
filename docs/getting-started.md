@@ -127,7 +127,7 @@ class WindDirection(IntEnum):
     W = 6
     NW = 7
 
-class WeatherData(bd.Bitfield):
+class WeatherPacket(bd.Bitfield):
     temperature: int = bd.int_field(6)
     wind_speed: int = bd.uint_field(6)
     wind_direction: WindDirection = bd.uint_enum_field(WindDirection, 3)
@@ -137,16 +137,16 @@ class WeatherData(bd.Bitfield):
 Now that we have our data structure defined, let's deserialize some packets:
 
 ```python
-WeatherData.from_bytes_exact(b'\x00\x00')
-# WeatherData(
+WeatherPacket.from_bytes_exact(b'\x00\x00')
+# WeatherPacket(
 #   temperature=0,
 #   wind_speed=0,
 #   wind_direction=WindDirection.N,
 #   sensor_error=False
 # )
 
-WeatherData.from_bytes_exact(b'\xFF\xFF')
-# WeatherData(
+WeatherPacket.from_bytes_exact(b'\xFF\xFF')
+# WeatherPacket(
 #   temperature=-1,
 #   wind_speed=63,
 #   wind_direction=WindDirection.NW,
@@ -157,7 +157,7 @@ WeatherData.from_bytes_exact(b'\xFF\xFF')
 Serializing the data back into bytes is just as easy:
 
 ```python
-WeatherData(
+WeatherPacket(
     temperature=0,
     wind_speed=0,
     wind_direction=WindDirection.N,
@@ -165,7 +165,7 @@ WeatherData(
 ).to_bytes()
 # b'\x00\x00'
 
-WeatherData(
+WeatherPacket(
     temperature=-1,
     wind_speed=63,
     wind_direction=WindDirection.NW,
@@ -196,10 +196,10 @@ during the parsing process:
 ```python
 data = b'\x00\x00\xFF\xFF\x00'
 
-weather_data, remaining = WeatherData.from_bytes(data)
+weather_data, remaining = WeatherPacket.from_bytes(data)
 
 print(weather_data)
-# WeatherData(
+# WeatherPacket(
 #   temperature=0,
 #   wind_speed=0,
 #   wind_direction=WindDirection.N,
@@ -217,10 +217,10 @@ the remaining bytes:
 ```python
 data = b'\x00\x00\xFF\xFF\x00'
 
-weather_data_list, remaining = WeatherData.from_bytes_batch(data)
+packets, remaining = WeatherPacket.from_bytes_batch(data)
 
-print(weather_data_list)
-# (Prints the list of two parsed WeatherData objects)
+print(packets)
+# (Prints the list of two parsed WeatherPacket packets)
 
 print(remaining)
 # b'\x00'
@@ -239,10 +239,10 @@ data = b''
 while True:
     data += ser.read_all()
 
-    weather_data_list, data = WeatherData.from_bytes_batch(data)
+    packets, data = WeatherPacket.from_bytes_batch(data)
 
-    for weather_data in weather_data_list:
-        print(weather_data)
+    for p in packets:
+        print(p)
 ```
 
 ## Next Steps
