@@ -15,21 +15,14 @@ with bitfields.
 
 ## Installation
 
-Clone this repository and run:
-
-```bash
-pip install .
-```
-
-I will publish this package to PyPI once it is more stable.
-
-<!--
 bydantic is available on PyPI and can be installed using `pip`:
 
 ```bash
 pip install bydantic
 ```
--->
+
+Note: Consider the current version as somewhat of a developer preview. bydantic
+is still under active development, and the API is still not quite settled.
 
 ## Quick Start
 
