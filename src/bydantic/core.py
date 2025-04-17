@@ -54,7 +54,7 @@ P = t.TypeVar("P")
 class ValueMapper(t.Protocol[T, P]):
     """
     A protocol for transforming values during serialization / deserialization
-    via [`mapped_field`](field-type-reference.md#bydantic.mapped_field).
+    via [`map_field`](field-type-reference.md#bydantic.map_field).
     """
 
     def forward(self, x: T) -> P:
@@ -85,7 +85,7 @@ class Scale(t.NamedTuple):
         import bydantic as bd
 
         class Foo(bd.Bitfield):
-            b: float = bd.mapped_field(bd.uint_field(8), bd.Scale(by=0.1))
+            b: float = bd.map_field(bd.uint_field(8), bd.Scale(by=0.1))
 
         foo = Foo(b=2)
         print(foo) # Foo(b=0.2)
@@ -120,7 +120,7 @@ class IntScale(t.NamedTuple):
         import bydantic as bd
 
         class Foo(bd.Bitfield):
-            b: int = bd.mapped_field(bd.uint_field(8), bd.IntScale(by=10))
+            b: int = bd.map_field(bd.uint_field(8), bd.IntScale(by=10))
 
         foo = Foo(b=20)
         print(foo) # Foo(b=20)
@@ -754,12 +754,7 @@ def _lit_field_helper(
     return disguise(BFLit(undisguise(field), default))
 
 
-LiteralIntT = t.TypeVar("LiteralIntT", bound=int)
-LiteralBytesT = t.TypeVar("LiteralBytesT", bound=bytes)
-LiteralStrT = t.TypeVar("LiteralStrT", bound=str)
-
-
-def lit_uint_field(n: int, *, default: LiteralIntT) -> Field[LiteralIntT]:
+def lit_uint_field(n: int, *, default: T) -> Field[T]:
     """
     A literal unsigned integer field type.
 
@@ -788,6 +783,10 @@ def lit_uint_field(n: int, *, default: LiteralIntT) -> Field[LiteralIntT]:
         print(foo2) # Foo(a=1, b=2)
         ```
     """
+    if not isinstance(default, int):
+        raise TypeError(
+            f"expected default to be an integer, got {default!r}"
+        )
     if default < 0:
         raise ValueError(
             f"expected default to be non-negative, got {default}"
@@ -799,7 +798,7 @@ def lit_uint_field(n: int, *, default: LiteralIntT) -> Field[LiteralIntT]:
     return _lit_field_helper(uint_field(n), default=default)
 
 
-def lit_int_field(n: int, *, default: LiteralIntT) -> Field[LiteralIntT]:
+def lit_int_field(n: int, *, default: T) -> Field[T]:
     """
     A literal signed integer field type.
 
@@ -828,6 +827,10 @@ def lit_int_field(n: int, *, default: LiteralIntT) -> Field[LiteralIntT]:
         print(foo2) # Foo(a=-1, b=2)
         ```
     """
+    if not isinstance(default, int):
+        raise TypeError(
+            f"expected default to be an integer, got {default!r}"
+        )
     if is_int_too_big(default, n, signed=True):
         raise ValueError(
             f"expected signed default to fit in {n} bits, got {default}"
@@ -836,8 +839,8 @@ def lit_int_field(n: int, *, default: LiteralIntT) -> Field[LiteralIntT]:
 
 
 def lit_bytes_field(
-    *, default: LiteralBytesT
-) -> Field[LiteralBytesT]:
+    *, default: T
+) -> Field[T]:
     """
     A literal bytes field type.
 
@@ -872,12 +875,16 @@ def lit_bytes_field(
             b: t.Literal[b'uv'] = b'uv'
         ```
     """
+    if not isinstance(default, bytes):
+        raise TypeError(
+            f"expected default to be bytes, got {default!r}"
+        )
     return _lit_field_helper(bytes_field(n_bytes=len(default)), default=default)
 
 
 def lit_str_field(
-    *, encoding: str = "utf-8", default: LiteralStrT
-) -> Field[LiteralStrT]:
+    *, encoding: str = "utf-8", default: T
+) -> Field[T]:
     """
     A literal string field type.
 
@@ -912,6 +919,10 @@ def lit_str_field(
             b: t.Literal["uv"] = "uv"
         ```
     """
+    if not isinstance(default, str):
+        raise TypeError(
+            f"expected default to be str, got {default!r}"
+        )
     return _lit_field_helper(
         str_field(n_bytes=len(default.encode(encoding)), encoding=encoding),
         default=default
@@ -1002,7 +1013,7 @@ def mapped_field(
 
         class Foo(bd.Bitfield):
             a: int = bd.uint_field(4)
-            b: float = bd.mapped_field(
+            b: float = bd.map_field(
                 bd.uint_field(4),
                 bd.Scale(0.5),
                 default=0.5
