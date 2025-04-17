@@ -883,12 +883,13 @@ def lit_bytes_field(
 
 
 def lit_str_field(
-    *, encoding: str = "utf-8", default: T
+    *, n_bytes: int | None = None, encoding: str = "utf-8", default: T
 ) -> Field[T]:
     """
     A literal string field type.
 
     Args:
+        n_bytes (int): The number of bytes used to represent the string.
         default (LiteralStrT): The literal default value to use when constructing the field in a new object.
             (Required to infer the literal type).
 
@@ -923,8 +924,12 @@ def lit_str_field(
         raise TypeError(
             f"expected default to be str, got {default!r}"
         )
+
+    if n_bytes is None:
+        n_bytes = len(default.encode(encoding))
+
     return _lit_field_helper(
-        str_field(n_bytes=len(default.encode(encoding)), encoding=encoding),
+        str_field(n_bytes=n_bytes, encoding=encoding),
         default=default
     )
 
