@@ -103,7 +103,7 @@ This just scratches the surface of what bydantic can do... continue reading
 - [Field type primitives](https://kylehusmann.com/bydantic/field-type-reference#field-type-primitives)
   (e.g. `int_field`, `str_field`, `bytes_field`, `lit_field`, etc.)
 - [Field type combinators](https://kylehusmann.com/bydantic/field-type-reference#field-type-combinators)
-  (e.g. `list_field`, `dynamic_field`, `map_field`, etc.)
+  (e.g. `list_field`, `dynamic_field`, `mapped_field`, etc.)
 - [Serialization & Deserialization context](https://kylehusmann.com/bydantic/serialization-deserialization-context)
 - [Bitfield reordering / alignment](https://kylehusmann.com/bydantic/bitfield-reordering-alignment)
 - Clear error messages for serialization / deserialization failures, even when

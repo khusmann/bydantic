@@ -179,8 +179,8 @@ As you can see, everything "just works".
 In addition to the field types demonstrated above, bydantic supports a variety
 of other primitive field types, including fields for `bytes` and `str` values.
 These field types can be composed into more complex data structures using
-combinators like `list_field`, `map_field`, and `dynamic_field`, which will be
-introduced in the [next chapter](complex-data-structures.md) of the
+combinators like `list_field`, `mapped_field`, and `dynamic_field`, which will
+be introduced in the [next chapter](complex-data-structures.md) of the
 documentation.
 
 For a complete list of available field types and their usage, see the
@@ -253,4 +253,4 @@ handles serialization and deserialization for you.
 
 In the [next chapter](complex-data-structures.md), we'll explore how to define
 more complex data structures using nested bitfields and field combinators like
-`list_field`, `map_field`, and `dynamic_field`.
+`list_field`, `mapped_field`, and `dynamic_field`.

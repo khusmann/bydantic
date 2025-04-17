@@ -54,7 +54,7 @@ P = t.TypeVar("P")
 class ValueMapper(t.Protocol[T, P]):
     """
     A protocol for transforming values during serialization / deserialization
-    via [`map_field`](field-type-reference.md#bydantic.map_field).
+    via [`mapped_field`](field-type-reference.md#bydantic.mapped_field).
     """
 
     def forward(self, x: T) -> P:
@@ -85,7 +85,7 @@ class Scale(t.NamedTuple):
         import bydantic as bd
 
         class Foo(bd.Bitfield):
-            b: float = bd.map_field(bd.uint_field(8), bd.Scale(by=0.1))
+            b: float = bd.mapped_field(bd.uint_field(8), bd.Scale(by=0.1))
 
         foo = Foo(b=2)
         print(foo) # Foo(b=0.2)
@@ -120,7 +120,7 @@ class IntScale(t.NamedTuple):
         import bydantic as bd
 
         class Foo(bd.Bitfield):
-            b: int = bd.map_field(bd.uint_field(8), bd.IntScale(by=10))
+            b: int = bd.mapped_field(bd.uint_field(8), bd.IntScale(by=10))
 
         foo = Foo(b=20)
         print(foo) # Foo(b=20)
@@ -967,7 +967,7 @@ def list_field(
     return disguise(BFList(undisguise(item), n_items, d))
 
 
-def map_field(
+def mapped_field(
     field: Field[T],
     vm: ValueMapper[T, P], *,
     default: P | ellipsis = ...
@@ -1002,7 +1002,7 @@ def map_field(
 
         class Foo(bd.Bitfield):
             a: int = bd.uint_field(4)
-            b: float = bd.map_field(
+            b: float = bd.mapped_field(
                 bd.uint_field(4),
                 bd.Scale(0.5),
                 default=0.5
@@ -1029,9 +1029,9 @@ def _bf_map_helper(
     default: P | NotProvided = NOT_PROVIDED,
 ) -> Field[P]:
     if is_provided(default):
-        return map_field(field, vm, default=default)
+        return mapped_field(field, vm, default=default)
     else:
-        return map_field(field, vm)
+        return mapped_field(field, vm)
 
 
 def dynamic_field(
@@ -1133,7 +1133,7 @@ class BitfieldConfig:
         _lit_field_helper,
         list_field,
         dynamic_field,
-        map_field,
+        mapped_field,
     )
 )
 class Bitfield(t.Generic[ContextT]):

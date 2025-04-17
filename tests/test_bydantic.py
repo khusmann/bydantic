@@ -176,12 +176,12 @@ def test_kitchen_sink():
 
     def foo(x: Foo) -> t.Literal[10] | list[float]:
         if x.ab == 1:
-            return bd.list_field(bd.map_field(bd.uint_field(5), bd.Scale(100)), 1)
+            return bd.list_field(bd.mapped_field(bd.uint_field(5), bd.Scale(100)), 1)
         else:
             return bd._lit_field_helper(bd.uint_field(5), default=10)
 
     class Foo(bd.Bitfield):
-        a: float = bd.map_field(bd.uint_field(2), bd.Scale(1 / 2))
+        a: float = bd.mapped_field(bd.uint_field(2), bd.Scale(1 / 2))
         _pad: t.Literal[0x5] = bd._lit_field_helper(
             bd.uint_field(3), default=0x5)
         ff: Baz
