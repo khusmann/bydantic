@@ -57,13 +57,13 @@ class ValueMapper(t.Protocol[T, P]):
     via [`map_field`](field-type-reference.md#bydantic.map_field).
     """
 
-    def forward(self, x: T) -> P:
+    def deserialize(self, x: T) -> P:
         """
         Transform the value from type T to type P when deserializing the bitfield.
         """
         ...
 
-    def back(self, y: P) -> T:
+    def serialize(self, y: P) -> T:
         """
         Transform the value from type P to type T when serializing the bitfield.
         """
@@ -100,11 +100,11 @@ class Scale:
         self.offset = offset
         self.n_digits = n_digits
 
-    def forward(self, x: int):
+    def deserialize(self, x: int):
         value = x * self.by + self.offset
         return value if self.n_digits is None else round(value, self.n_digits)
 
-    def back(self, y: float):
+    def serialize(self, y: float):
         return round((y - self.offset) / self.by)
 
 
@@ -136,10 +136,10 @@ class IntScale:
         self.by = by
         self.offset = offset
 
-    def forward(self, x: int):
+    def deserialize(self, x: int):
         return x * self.by + self.offset
 
-    def back(self, y: int):
+    def serialize(self, y: int):
         return round((y-self.offset) / self.by)
 
 
@@ -351,7 +351,7 @@ def int_field(n: int, *, default: int | ellipsis = ...) -> Field[int]:
             )
 
     class ConvertSign:
-        def forward(self, x: int) -> int:
+        def deserialize(self, x: int) -> int:
             # x will always fit in n bits because it was
             # loaded by uint_field(n)
 
@@ -359,7 +359,7 @@ def int_field(n: int, *, default: int | ellipsis = ...) -> Field[int]:
                 x -= 1 << n
             return x
 
-        def back(self, y: int) -> int:
+        def serialize(self, y: int) -> int:
             if is_int_too_big(y, n, signed=True):
                 raise ValueError(
                     f"expected signed value to fit in {n} bits, got {y}"
@@ -404,10 +404,10 @@ def bool_field(*, default: bool | ellipsis = ...) -> Field[bool]:
         ```
     """
     class IntAsBool:
-        def forward(self, x: int) -> bool:
+        def deserialize(self, x: int) -> bool:
             return x != 0
 
-        def back(self, y: bool) -> int:
+        def serialize(self, y: bool) -> int:
             return 1 if y else 0
 
     return _bf_map_helper(uint_field(1), IntAsBool(), default=ellipsis_to_not_provided(default))
@@ -452,10 +452,10 @@ def bytes_field(*, n_bytes: int, default: bytes | ellipsis = ...) -> Field[bytes
         )
 
     class ListAsBytes:
-        def forward(self, x: t.List[int]) -> bytes:
+        def deserialize(self, x: t.List[int]) -> bytes:
             return bytes(x)
 
-        def back(self, y: bytes) -> t.List[int]:
+        def serialize(self, y: bytes) -> t.List[int]:
             return list(y)
 
     return _bf_map_helper(list_field(uint_field(8), n_bytes), ListAsBytes(), default=d)
@@ -503,10 +503,10 @@ def str_field(*, n_bytes: int, encoding: str = "utf-8", default: str | ellipsis 
             )
 
     class BytesAsStr:
-        def forward(self, x: bytes) -> str:
+        def deserialize(self, x: bytes) -> str:
             return x.decode(encoding).rstrip("\0")
 
-        def back(self, y: str) -> bytes:
+        def serialize(self, y: str) -> bytes:
             return y.ljust(n_bytes, "\0").encode(encoding)
 
     return _bf_map_helper(bytes_field(n_bytes=n_bytes), BytesAsStr(), default=d)
@@ -562,10 +562,10 @@ def uint_enum_field(enum: t.Type[IntEnumT], n: int,  *, default: IntEnumT | elli
         )
 
     class IntAsEnum:
-        def forward(self, x: int) -> IntEnumT:
+        def deserialize(self, x: int) -> IntEnumT:
             return enum(x)
 
-        def back(self, y: IntEnumT) -> int:
+        def serialize(self, y: IntEnumT) -> int:
             return y.value
 
     return _bf_map_helper(uint_field(n), IntAsEnum(), default=ellipsis_to_not_provided(default))
@@ -608,10 +608,10 @@ def int_enum_field(enum: t.Type[IntEnumT], n: int, *, default: IntEnumT | ellips
         ```
     """
     class IntAsEnum:
-        def forward(self, x: int) -> IntEnumT:
+        def deserialize(self, x: int) -> IntEnumT:
             return enum(x)
 
-        def back(self, y: IntEnumT) -> int:
+        def serialize(self, y: IntEnumT) -> int:
             return y.value
 
     return _bf_map_helper(int_field(n), IntAsEnum(), default=ellipsis_to_not_provided(default))
@@ -995,10 +995,10 @@ def mapped_field(
     A field type for creating transformations of values.
 
     Transformations are done via the `ValueMapper` protocol, an object
-    defined with `forward` and `back` methods. The `forward` method
+    defined with `deserialize` and `serialize` methods. The `deserialize` method
     is used to transform the value when deserializing the field from
-    bytes, and the `back` method is used to reverse this transformation
-    when serializing the field back to bytes.
+    the provided field type, and the `serialize` method is used to reverse this transformation
+    when serializing the field back.
 
     Several built-in value mappers are provided, including
     [`Scale`](bitfield-class-reference.md#bydantic.Scale) and
@@ -1480,7 +1480,7 @@ def _read_bftype(
             value, stream = _read_bftype(
                 stream, inner, proxy, opts
             )
-            return vm.forward(value), stream
+            return vm.deserialize(value), stream
 
         case BFDynSelf(fn=fn):
             return _read_bftype(stream, undisguise(fn(proxy)), proxy, opts)
@@ -1544,9 +1544,9 @@ def _write_bftype(
             return stream
 
         case BFMap(inner=inner, vm=vm):
-            first_arg = next(iter(inspect.signature(vm.back).parameters))
+            first_arg = next(iter(inspect.signature(vm.serialize).parameters))
             expected_type = t.get_type_hints(
-                vm.back
+                vm.serialize
             ).get(first_arg, NOT_PROVIDED)
 
             # If the first arg of the mappers transform has a type hint,
@@ -1564,7 +1564,7 @@ def _write_bftype(
                         f"expected {expected_type.__name__}, got {type(value).__name__}"
                     )
 
-            return _write_bftype(stream, inner, vm.back(value), proxy, opts)
+            return _write_bftype(stream, inner, vm.serialize(value), proxy, opts)
 
         case BFDynSelf(fn=fn):
             return _write_bftype(stream, undisguise(fn(proxy)), value, proxy, opts)

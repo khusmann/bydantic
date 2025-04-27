@@ -165,10 +165,10 @@ import typing as t
 T = t.TypeVar('T')
 P = t.TypeVar('P')
 class ValueMapper(t.Protocol[T, P]):
-    def forward(self, value: T) -> P:
+    def deserialize(self, value: T) -> P:
         ...
 
-    def back(self, value: P) -> T:
+    def serialize(self, value: P) -> T:
         ...
 ```
 
@@ -177,15 +177,17 @@ follows:
 
 ```python
 class Scale:
-    def __init__(self, by: float, offset: float = 0.0):
+    def __init__(self, by: float, offset: float = 0.0, n_digits: int | None = None):
         self.by = by
         self.offset = offset
+        self.n_digits = n_digits
 
-    def forward(self, value: float) -> int:
-        return int((value - self.offset) / self.by)
+    def deserialize(self, x: int):
+        value = x * self.by + self.offset
+        return value if self.n_digits is None else round(value, self.n_digits)
 
-    def back(self, value: int) -> float:
-        return value * self.by + self.offset
+    def serialize(self, y: float):
+        return round((y - self.offset) / self.by)
 ```
 
 In the case of `temperature`, we're using `Scale()` to map the `uint8` value to
