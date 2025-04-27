@@ -63,18 +63,6 @@ def encode_weather_data(
     wind_direction: int,
     sensor_error: bool
 ) -> bytes:
-    if not (-64 <= temperature <= 63):
-        raise ValueError("Temperature must be between -64 and 63")
-
-    if not (0 <= wind_speed <= 63):
-        raise ValueError("Wind speed must be between 0 and 63")
-
-    if not (0 <= wind_direction <= 7):
-        raise ValueError("Wind direction must be between 0 and 7")
-
-    if not isinstance(sensor_error, bool):
-        raise ValueError("Sensor error must be a boolean")
-
     # Create a bytearray to hold the packed data
     data = bytearray(2)
 
