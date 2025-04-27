@@ -121,7 +121,7 @@ station_uuid: bytes = bd.bytes_field(n_bytes = 4)
 
 This field is a `bytes` field with a size of 4 bytes. Not much to say here!
 
-## `station_name`
+### `station_name`
 
 The `station_name` field is defined as follows:
 
