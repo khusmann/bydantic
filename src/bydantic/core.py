@@ -97,14 +97,16 @@ class Scale(t.NamedTuple):
 
     by: float
 
+    offset: float = 0.0
+
     n_digits: int | None = None
 
     def forward(self, x: int):
-        value = x * self.by
+        value = x * self.by + self.offset
         return value if self.n_digits is None else round(value, self.n_digits)
 
     def back(self, y: float):
-        return round(y / self.by)
+        return round((y - self.offset) / self.by)
 
 
 class IntScale(t.NamedTuple):
