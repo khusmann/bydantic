@@ -24,8 +24,6 @@ constructed via [field type combinators](#field-type-combinators).
 
 ### ::: bydantic.bits_field
 
-### ::: bydantic.bitfield_field
-
 ## Literal Field Types
 
 These field types are used to define fields with literal types. They are most
@@ -43,9 +41,11 @@ often useful for fixed-length headers, padding, etc.
 
 These field types can be used build new field types from other field types.
 
+### ::: bydantic.mapped_field
+
 ### ::: bydantic.list_field
 
-### ::: bydantic.mapped_field
+### ::: bydantic.bitfield_field
 
 ### ::: bydantic.dynamic_field
 
