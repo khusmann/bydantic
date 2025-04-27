@@ -4,12 +4,12 @@ As a motivating example, let's suppose we have a little weather station that
 sends data over a serial connection. Say it uses a simple binary protocol that
 packs the following information into two bytes:
 
-| Bits  | Field Name       | Type  | Description                                 |
-| ----- | ---------------- | ----- | ------------------------------------------- |
-| 0-5   | `temperature`    | int6  | Temperature, degrees Celsius                |
-| 6–11  | `wind_speed`     | uint6 | Wind speed, km/h                            |
-| 12–14 | `wind_direction` | uint3 | Wind direction (0 = N, 1 = NE, ..., 7 = NW) |
-| 15    | `sensor_error`   | bool  | Sensor error flag (1 = error)               |
+| Bits  | Field          | Type (N bits) | Description                                 |
+| ----- | -------------- | ------------- | ------------------------------------------- |
+| 0-5   | Temperature    | int (6)       | Temperature, degrees Celsius                |
+| 6–11  | Wind Speed     | uint (6)      | Wind speed, km/h                            |
+| 12–14 | Wind Direction | uint (3)      | Wind direction (0 = N, 1 = NE, ..., 7 = NW) |
+| 15    | Sensor Error   | bool (1)      | Sensor error flag (1 = error)               |
 
 ```mermaid
 ---

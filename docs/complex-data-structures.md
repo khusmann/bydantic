@@ -1,3 +1,7 @@
 # Complex Data Structures
 
-Coming soon...
+- nested bitfields
+
+- list_field
+
+- dynamic_field
