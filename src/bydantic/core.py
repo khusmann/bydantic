@@ -70,7 +70,7 @@ class ValueMapper(t.Protocol[T, P]):
         ...
 
 
-class Scale(t.NamedTuple):
+class Scale:
     """
     A value mapper that scales a value by a given factor,
     resulting in a float value.
@@ -95,11 +95,10 @@ class Scale(t.NamedTuple):
         ```
     """
 
-    by: float
-
-    offset: float = 0.0
-
-    n_digits: int | None = None
+    def __init__(self, by: float, offset: float = 0.0, n_digits: int | None = None):
+        self.by = by
+        self.offset = offset
+        self.n_digits = n_digits
 
     def forward(self, x: int):
         value = x * self.by + self.offset
@@ -109,7 +108,7 @@ class Scale(t.NamedTuple):
         return round((y - self.offset) / self.by)
 
 
-class IntScale(t.NamedTuple):
+class IntScale:
     """
     A value mapper that scales a value by a given factor,
     resulting in an integer value.
@@ -133,13 +132,15 @@ class IntScale(t.NamedTuple):
         ```
     """
 
-    by: int
+    def __init__(self, by: int, offset: int = 0):
+        self.by = by
+        self.offset = offset
 
     def forward(self, x: int):
-        return x * self.by
+        return x * self.by + self.offset
 
     def back(self, y: int):
-        return round(y / self.by)
+        return round((y-self.offset) / self.by)
 
 
 class BFBits(t.NamedTuple):
