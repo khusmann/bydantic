@@ -187,7 +187,7 @@ def test_kitchen_sink():
         ay: t.Literal[b'world'] = b'world'
         ab: int = bd.uint_field(10)
         ac: int = bd.uint_field(2)
-        zz: BarEnum = bd.uint_enum_field(2, BarEnum)
+        zz: BarEnum = bd.uint_enum_field(BarEnum, 2)
         yy: bytes = bd.bytes_field(n_bytes=2)
         ad: int = bd.uint_field(3)
         c: t.Literal[10] | list[float] | Baz = bd.dynamic_field(foo)
@@ -334,8 +334,8 @@ def test_int_enum():
         C = 1
 
     class Foo(bd.Bitfield):
-        a: UnsignedEnum = bd.uint_enum_field(4, UnsignedEnum)
-        b: SignedEnum = bd.int_enum_field(4, SignedEnum)
+        a: UnsignedEnum = bd.uint_enum_field(UnsignedEnum, 4)
+        b: SignedEnum = bd.int_enum_field(SignedEnum, 4)
 
     foo = Foo(a=UnsignedEnum.A, b=SignedEnum.A)
     assert foo.to_bytes() == b'\x1f'
@@ -343,7 +343,7 @@ def test_int_enum():
 
     with pytest.raises(ValueError):
         class Fail1(bd.Bitfield):
-            a: SignedEnum = bd.uint_enum_field(4, SignedEnum)
+            a: SignedEnum = bd.uint_enum_field(SignedEnum, 4)
         print(Fail1)
 
 

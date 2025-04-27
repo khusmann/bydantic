@@ -514,7 +514,7 @@ def str_field(*, n_bytes: int, encoding: str = "utf-8", default: str | ellipsis 
 IntEnumT = t.TypeVar("IntEnumT", bound=IntEnum | IntFlag)
 
 
-def uint_enum_field(n: int, enum: t.Type[IntEnumT], *, default: IntEnumT | ellipsis = ...) -> Field[IntEnumT]:
+def uint_enum_field(enum: t.Type[IntEnumT], n: int,  *, default: IntEnumT | ellipsis = ...) -> Field[IntEnumT]:
     """
     An unsigned integer enum field type.
 
@@ -539,8 +539,8 @@ def uint_enum_field(n: int, enum: t.Type[IntEnumT], *, default: IntEnumT | ellip
             PURPLE = 4
 
         class Foo(bd.Bitfield):
-            a: Color = bd.uint_enum_field(4, Color)
-            b: Color = bd.uint_enum_field(4, Color, default=Color.GREEN)
+            a: Color = bd.uint_enum_field(Color, 4)
+            b: Color = bd.uint_enum_field(Color, 4, default=Color.GREEN)
 
         foo = Foo(a=Color.RED, b=Color.BLUE)
         print(foo) # Foo(a=<Color.RED: 1>, b=<Color.BLUE: 3>)
@@ -570,7 +570,7 @@ def uint_enum_field(n: int, enum: t.Type[IntEnumT], *, default: IntEnumT | ellip
     return _bf_map_helper(uint_field(n), IntAsEnum(), default=ellipsis_to_not_provided(default))
 
 
-def int_enum_field(n: int, enum: t.Type[IntEnumT], *, default: IntEnumT | ellipsis = ...) -> Field[IntEnumT]:
+def int_enum_field(enum: t.Type[IntEnumT], n: int, *, default: IntEnumT | ellipsis = ...) -> Field[IntEnumT]:
     """
     An signed integer enum field type.
 
@@ -595,8 +595,8 @@ def int_enum_field(n: int, enum: t.Type[IntEnumT], *, default: IntEnumT | ellips
             PURPLE = 1
 
         class Foo(bd.Bitfield):
-            a: Color = bd.int_enum_field(4, Color)
-            b: Color = bd.int_enum_field(4, Color, default=Color.GREEN)
+            a: Color = bd.int_enum_field(Color, 4)
+            b: Color = bd.int_enum_field(Color, 4, default=Color.GREEN)
 
         foo = Foo(a=Color.RED, b=Color.BLUE)
         print(foo) # Foo(a=<Color.RED: -2>, b=<Color.BLUE: 0>)
