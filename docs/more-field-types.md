@@ -50,8 +50,8 @@ class WeatherPacket2(bd.Bitfield):
     _pad: t.Literal[0] = bd.lit_uint_field(4, default=0)
 ```
 
-Before we dive into the details, let's serialize and deserialize a packets to
-see it working:
+Before we dive into the details, let's serialize and deserialize a packet to see
+it in action:
 
 ```python
 WeatherPacket2(
