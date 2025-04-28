@@ -37,14 +37,14 @@ class Foo(bd.Bitfield):
     c: str = bd.str_field(n_bytes=1)
 ```
 
-This defines a bitfield with three fields: `a` and `b` are 4-bit integers, and
-`c` is a 1-byte (8-bit) string:
+This defines a bitfield with three fields: `a` and `b` are 4-bit unsigned
+integers, and `c` is a 1-byte (8-bit) string:
 
 ```mermaid
 ---
 title: "Foo Bitfield"
 ---
-%%{init: {'theme': 'default', 'packet': { 'rowHeight': 50, 'bitWidth': 100, 'bitsPerRow': 8 }}}%%
+%%{init: {'theme': 'default', 'packet': { 'rowHeight': 50, 'bitWidth': 100, 'bitsPerRow': 8 }, 'themeCSS': '.mermaid-viewer-control-panel { display: none; }'}}%%
 packet-beta
 0-3: "a"
 4-7: "b"
