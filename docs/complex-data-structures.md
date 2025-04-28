@@ -179,7 +179,7 @@ VarStr.from_bytes_exact(b'\x03ABC')
 
 The `dynamic_field` combinator is also useful for defining optional fields:
 
-````python
+```python
 from __future__ import annotations
 import bydantic as bd
 
@@ -223,7 +223,7 @@ def discriminator(
 
 class FancyDynamic(bd.Bitfield):
     value: ChildField | bytes = bd.dynamic_field(discriminator)
-````
+```
 
 Here's some deserialization examples of the `FancyDynamic` bitfield:
 
