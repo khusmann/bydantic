@@ -13,8 +13,14 @@ nav:
 
 theme:
   name: material
+  custom_dir: overrides
   features:
     - content.code.copy
+
+extra:
+  analytics:
+    provider: goatcounter
+    code: bydantic
 
 watch:
   - src
