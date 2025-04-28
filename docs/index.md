@@ -48,6 +48,19 @@ integers, and `c` is a 1-byte (8-bit) string:
 
 ![Bitfield Diagram](https://kylehusmann.com/bydantic/assets/example_foo.svg)
 
+<!--
+
+---
+title: "Foo Bitfield"
+---
+%%{init: {'theme': 'default', 'packet': { 'rowHeight': 50, 'bitWidth': 100, 'bitsPerRow': 8 }}}%%
+packet-beta
+0-3: "a"
+4-7: "b"
+8-15: "c"
+
+--->
+
 You can then serialize and deserialize instances of `Foo` to and from raw bytes:
 
 ```python
