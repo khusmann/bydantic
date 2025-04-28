@@ -177,22 +177,21 @@ VarStr.from_bytes_exact(b'\x03ABC')
 # )
 ```
 
-Here's an example that combines all of the above concepts into a single
-bitfield: a bitfield that contains a dynamically-sized list of `WeatherPacket`
-bitfields!
+The `dynamic_field` combinator is also useful for defining optional fields:
 
-```python
+````python
 from __future__ import annotations
 import bydantic as bd
 
-def discriminator(field: WeatherPacketList) -> bd.Field[list[WeatherPacket]]:
-    return bd.list_field(
-        bd.bitfield_field(WeatherPacket), field.n_packets
-    )
+def discriminator(field: OptionalField) -> bd.Field[bytes | None]:
+    if field.has_values:
+        return bd.bytes_field(n_bytes = 8)
+    else:
+        return None
 
-class WeatherPacketList(bd.BitField):
-    n_packets: int = bd.uint_field(8)
-    packets: list[WeatherPacket] = bd.dynamic_field(discriminator)
+class OptionalField(bd.Bitfield):
+    has_values: bool = bd.bool_field()
+    values: bytes | None = bd.dynamic_field(discriminator)
 ```
 
 ## `dynamic_field` (discriminator variation 2)
@@ -224,7 +223,7 @@ def discriminator(
 
 class FancyDynamic(bd.Bitfield):
     value: ChildField | bytes = bd.dynamic_field(discriminator)
-```
+````
 
 Here's some deserialization examples of the `FancyDynamic` bitfield:
 
