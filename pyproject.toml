@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "bydantic"
-version = "0.0.2"
+version = "0.0.3"
 description = "A type-aware bitfield serializing / deserializing library for Python"
 authors = [{name = "Kyle Husmann", email = "bydantic@kylehusmann.com"}]
 readme = "README.md"
