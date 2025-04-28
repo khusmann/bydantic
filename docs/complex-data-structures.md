@@ -211,7 +211,11 @@ class ChildField(bd.Bitfield):
     b: int = bd.uint_field(8)
     c: int = bd.uint_field(8)
 
-def discriminator(field: VarStr, n_bits_remaining: int) -> bd.Field[ChildField | bytes]:
+def discriminator(
+    field: VarStr,
+    n_bits_remaining: int
+) -> bd.Field[ChildField | bytes]:
+
     if n_bits_remaining == ChildField.length():
         return ChildField
     else:
@@ -246,7 +250,11 @@ that is not one of these types, the `to_bytes()` method will raise an exception:
 from __future__ import annotations
 import bydantic as bd
 
-def discriminator(field: FailedDynamic, n_bits_remaining: int) -> bd.Field[int | bytes]:
+def discriminator(
+    field: FailedDynamic,
+    n_bits_remaining: int
+) -> bd.Field[int | bytes]:
+
     if n_bits_remaining == 8:
         return bd.uint_field(8)
     else:
@@ -277,7 +285,11 @@ import bydantic as bd
 class WrappedInt(bd.Bitfield):
     v: int = bd.uint_field(8)
 
-def discriminator(field: FixedDynamic, n_bits_remaining: int) -> bd.Field[WrappedInt | bytes]:
+def discriminator(
+    field: FixedDynamic,
+    n_bits_remaining: int
+) -> bd.Field[WrappedInt | bytes]:
+
     if n_bits_remaining == 8:
         return WrappedInt
     else:
@@ -295,8 +307,64 @@ FixedDynamic(value=WrappedInt(v=0)).to_bytes()
 # b'\x00'
 ```
 
+## Putting It All Together
+
+Let's see if we can put all these concepts together into a single example,
+building on the `WeatherPacket` and `WeatherPacket2` bitfields we defined in the
+previous chapters.
+
+Say we have a controller device that collects weather data from a number of
+weather stations, and then assembles the data into a single packet. Let's say it
+gives us the number of weather stations in a 1-byte header, then a list of
+weather packets. Each weather packet is in a container that contains a 1-byte
+header indicating which weather packet version is used:
+
+```python
+from __future__ import annotations
+import bydantic as bd
+from enum import Enum
+
+class WeatherPacketVersion(Enum):
+    V1 = 0
+    V2 = 1
+
+def version_discriminator(
+    field: WeatherPacketContainer
+) -> bd.Field[WeatherPacket | WeatherPacket2]:
+
+    if field.version == WeatherPacketVersion.V1:
+        return WeatherPacket
+    else:
+        return WeatherPacket2
+
+class WeatherPacketContainer(bd.BitField):
+    version: WeatherPacketVersion = bd.uint_enum_field(WeatherPacketVersion, 8)
+    packet: WeatherPacket | WeatherPacket2 = (
+        bd.dynamic_field(version_discriminator)
+    )
+
+class WeatherControllerUpdate(bd.BitField):
+    n_stations: int = bd.uint_field(8)
+    packets: list[WeatherPacketContainer] = bd.list_field(
+        WeatherPacketContainer, n_stations
+    )
+```
+
+And there you have it!
+
 ## Next Steps
 
 In this chapter, we introduced three new field type combinators: `list_field`,
 `bitfield_field`, and `dynamic_field`, and showed how they can be used to create
 more complex data structures.
+
+The [next chapter](advanced-features.md) will cover some of bydantic's more
+advanced features, but these features are still experimental and not necessary
+to use the library.
+
+This completes our tour of the field types and combinators available in
+`bydantic`. Congratulations, now you can define bitfields like a pro!
+
+For quick reference of field types and capabilities of the `Bitfield` class, you
+can check out the [Field Type Reference](field-type-reference.md) and
+[Bitfield Class Reference](bitfield-class-reference.md)

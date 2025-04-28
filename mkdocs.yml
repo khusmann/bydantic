@@ -7,8 +7,7 @@ nav:
   - Getting Started: getting-started.md
   - More Field Types: more-field-types.md
   - Complex Data Structures: complex-data-structures.md
-  - Serialization & Deserialization Context: serialization-deserialization-context.md
-  - Bitfield Reordering / Alignment: bitfield-reordering-alignment.md
+  - Advanced Features: advanced-features.md
   - Field Type Reference: field-type-reference.md
   - Bitfield Class Reference: bitfield-class-reference.md
 
