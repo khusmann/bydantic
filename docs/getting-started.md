@@ -239,6 +239,5 @@ As you can see, bydantic makes it easy to define and work with binary protocols
 in Python. It provides a simple and declarative way to define bitfields, and
 handles serialization and deserialization for you.
 
-In the [next chapter](complex-data-structures.md), we'll explore how to define
-more complex data structures using nested bitfields and field combinators like
-`list_field`, `mapped_field`, and `dynamic_field`.
+In the [next chapter](more-field-types.md), we'll introduce some more field
+types, and meet our first field type combinator.
