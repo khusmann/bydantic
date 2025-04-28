@@ -44,8 +44,20 @@ class Foo(bd.Bitfield):
 ```
 
 This defines a bitfield with three fields: `a` and `b` are 4-bit integers, and
-`c` is a 1-byte (8-bit) string. You can then serialize and deserialize instances
-of `Foo` to and from raw bytes:
+`c` is a 1-byte (8-bit) string:
+
+```mermaid
+---
+title: "Foo Bitfield"
+---
+%%{init: {'theme': 'default', 'packet': { 'rowHeight': 50, 'bitWidth': 100, 'bitsPerRow': 8 }}}%%
+packet-beta
+0-3: "a"
+4-7: "b"
+8-15: "c"
+```
+
+You can then serialize and deserialize instances of `Foo` to and from raw bytes:
 
 ```python
 foo = Foo(a=1, b=2, c="x")
