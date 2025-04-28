@@ -1,6 +1,8 @@
 # bydantic
 
 [![Project Status: WIP – Initial development is in progress, but there has not yet been a stable, usable release suitable for the public.](https://www.repostatus.org/badges/latest/wip.svg)](https://www.repostatus.org/#wip)
+![PyPI - Version](https://img.shields.io/pypi/v/bydantic)
+![PyPI - Downloads](https://img.shields.io/pypi/dm/bydantic)
 
 `bydantic` is a Python library for serializing and deserializing bitfields.
 bydantic allows you to declaratively define bitfields as Python classes with
