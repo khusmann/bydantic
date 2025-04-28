@@ -40,7 +40,7 @@ class Foo(bd.Bitfield):
 This defines a bitfield with three fields: `a` and `b` are 4-bit unsigned
 integers, and `c` is a 1-byte (8-bit) string:
 
-![Bitfield Diagram](assets/example_foo.svg)
+![Bitfield Diagram](https://kylehusmann.com/bydantic/assets/example_foo.svg)
 
 You can then serialize and deserialize instances of `Foo` to and from raw bytes:
 
