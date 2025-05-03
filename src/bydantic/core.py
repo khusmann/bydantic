@@ -1144,7 +1144,7 @@ class Bitfield(t.Generic[ContextT]):
 
     __bydantic_fields__: t.ClassVar[t.Dict[str, BFType]] = {}
 
-    __BYDANTIC_CONTEXT_STR__: t.ClassVar[str] = "bitfield_context"
+    __BYDANTIC_CONTEXT_STR__: t.ClassVar[str] = "ctx"
 
     ctx: ContextT | None = None
     """
@@ -1201,14 +1201,14 @@ class Bitfield(t.Generic[ContextT]):
         return acc
 
     @classmethod
-    def from_bits_exact(cls, bits: t.Sequence[bool], opts: ContextT | None = None):
+    def from_bits_exact(cls, bits: t.Sequence[bool], ctx: ContextT | None = None):
         """
         Parses a bitfield from a sequence of bits, returning the parsed object.
         Raises a ValueError if there are any bits left over after parsing.
 
         Args:
             bits (t.Sequence[bool]): The bits to parse.
-            opts (ContextT | None): An optional context object to use when parsing.
+            ctx (ContextT | None): An optional context object to use when parsing.
 
         Returns:
             Self: The parsed object.
@@ -1216,7 +1216,7 @@ class Bitfield(t.Generic[ContextT]):
         Raises:
             ValueError: If there are any bits left over after parsing.
         """
-        out, remaining = cls.from_bits(bits, opts)
+        out, remaining = cls.from_bits(bits, ctx)
 
         if remaining:
             raise ValueError(
@@ -1226,14 +1226,14 @@ class Bitfield(t.Generic[ContextT]):
         return out
 
     @classmethod
-    def from_bytes_exact(cls, data: t.ByteString, opts: ContextT | None = None):
+    def from_bytes_exact(cls, data: t.ByteString, ctx: ContextT | None = None):
         """
         Parses a bitfield from a byte string, returning the parsed object.
         Raises a ValueError if there are any bytes left over after parsing.
 
         Args:
             data (t.ByteString): The bytes to parse.
-            opts (ContextT | None): An optional context object to use when parsing.
+            ctx (ContextT | None): An optional context object to use when parsing.
 
         Returns:
             Self: The parsed object.
@@ -1241,7 +1241,7 @@ class Bitfield(t.Generic[ContextT]):
         Raises:
             ValueError: If there are any bytes left over after parsing.
         """
-        out, remaining = cls.from_bytes(data, opts)
+        out, remaining = cls.from_bytes(data, ctx)
 
         if remaining:
             raise ValueError(
@@ -1251,40 +1251,40 @@ class Bitfield(t.Generic[ContextT]):
         return out
 
     @classmethod
-    def from_bits(cls, bits: t.Sequence[bool], opts: ContextT | None = None) -> t.Tuple[Self, t.Tuple[bool, ...]]:
+    def from_bits(cls, bits: t.Sequence[bool], ctx: ContextT | None = None) -> t.Tuple[Self, t.Tuple[bool, ...]]:
         """
         Parse a bitfield from a sequence of bits, returning the parsed object and
         any remaining bits.
 
         Args:
             bits (t.Sequence[bool]): The bits to parse.
-            opts (ContextT | None): An optional context object to use when parsing.
+            ctx (ContextT | None): An optional context object to use when parsing.
 
         Returns:
             t.Tuple[Self, t.Tuple[bool, ...]]: A tuple containing the parsed object and
                 any remaining bits.
         """
         out, stream = cls.__bydantic_read_stream__(
-            BitstreamReader.from_bits(bits), opts
+            BitstreamReader.from_bits(bits), ctx
         )
         return out, stream.as_bits()
 
     @classmethod
-    def from_bytes(cls, data: t.ByteString, opts: ContextT | None = None) -> t.Tuple[Self, bytes]:
+    def from_bytes(cls, data: t.ByteString, ctx: ContextT | None = None) -> t.Tuple[Self, bytes]:
         """ 
         Parses a bitfield from a byte string, returning the parsed object and
         any remaining bytes.
 
         Args:
             data (t.ByteString): The bytes to parse.
-            opts (ContextT | None): An optional context object to use when parsing.
+            ctx (ContextT | None): An optional context object to use when parsing.
 
         Returns:
             t.Tuple[Self, bytes]: A tuple containing the parsed object and
                 any remaining bytes.
         """
         out, stream = cls.__bydantic_read_stream__(
-            BitstreamReader.from_bytes(data), opts
+            BitstreamReader.from_bytes(data), ctx
         )
         return out, stream.as_bytes()
 
@@ -1292,7 +1292,7 @@ class Bitfield(t.Generic[ContextT]):
     def from_bytes_batch(
         cls,
         data: t.ByteString,
-        opts: ContextT | None = None,
+        ctx: ContextT | None = None,
     ) -> t.Tuple[t.List[Self], bytes]:
         """
         Parses a batch of bitfields from a byte string, returning the parsed objects
@@ -1300,7 +1300,7 @@ class Bitfield(t.Generic[ContextT]):
 
         Args:
             data (t.ByteString): The bytes to parse.
-            opts (ContextT | None): An optional context object to use when parsing.
+            ctx (ContextT | None): An optional context object to use when parsing.
 
         Returns:
             t.Tuple[t.List[Self], bytes]: A tuple containing the parsed objects and
@@ -1312,7 +1312,7 @@ class Bitfield(t.Generic[ContextT]):
 
         while stream.bits_remaining():
             try:
-                item, stream = cls.__bydantic_read_stream__(stream, opts)
+                item, stream = cls.__bydantic_read_stream__(stream, ctx)
                 out.append(item)
             except DeserializeFieldError as e:
                 if isinstance(e.inner, EOFError):
@@ -1327,29 +1327,29 @@ class Bitfield(t.Generic[ContextT]):
 
         return out, stream.as_bytes()
 
-    def to_bits(self, opts: ContextT | None = None) -> t.Tuple[bool, ...]:
+    def to_bits(self, ctx: ContextT | None = None) -> t.Tuple[bool, ...]:
         """
         Serializes the bitfield to a sequence of bits.
 
         Args:
-            opts (ContextT | None): An optional context object to use when serializing.
+            ctx (ContextT | None): An optional context object to use when serializing.
 
         Returns:
             t.Tuple[bool, ...]: The serialized bitfield as a sequence of bits.
         """
-        return self.__bydantic_write_stream__(BitstreamWriter(), opts).as_bits()
+        return self.__bydantic_write_stream__(BitstreamWriter(), ctx).as_bits()
 
-    def to_bytes(self, opts: ContextT | None = None) -> bytes:
+    def to_bytes(self, ctx: ContextT | None = None) -> bytes:
         """
         Serializes the bitfield to a byte string.
 
         Args:
-            opts (ContextT | None): An optional context object to use when serializing.
+            ctx (ContextT | None): An optional context object to use when serializing.
 
         Returns:
             bytes: The serialized bitfield as a byte string.
         """
-        return self.__bydantic_write_stream__(BitstreamWriter(), opts).as_bytes()
+        return self.__bydantic_write_stream__(BitstreamWriter(), ctx).as_bytes()
 
     def __init_subclass__(cls):
         cls.__bydantic_fields__ = cls.__bydantic_fields__.copy()
@@ -1385,14 +1385,14 @@ class Bitfield(t.Generic[ContextT]):
     def __bydantic_read_stream__(
         cls,
         stream: BitstreamReader,
-        opts: ContextT | None,
+        ctx: ContextT | None,
     ):
-        proxy: AttrProxy = AttrProxy({cls.__BYDANTIC_CONTEXT_STR__: opts})
+        proxy: AttrProxy = AttrProxy({cls.__BYDANTIC_CONTEXT_STR__: ctx})
 
         for name, field in cls.__bydantic_fields__.items():
             try:
                 value, stream = _read_bftype(
-                    stream, field, proxy, opts
+                    stream, field, proxy, ctx
                 )
             except DeserializeFieldError as e:
                 e.push_stack(cls.__name__, name)
@@ -1407,16 +1407,16 @@ class Bitfield(t.Generic[ContextT]):
     def __bydantic_write_stream__(
         self,
         stream: BitstreamWriter,
-        opts: ContextT | None,
+        ctx: ContextT | None,
     ) -> BitstreamWriter:
         proxy = AttrProxy(
-            {**self.__dict__, self.__BYDANTIC_CONTEXT_STR__: opts})
+            {**self.__dict__, self.__BYDANTIC_CONTEXT_STR__: ctx})
 
         for name, field in self.__bydantic_fields__.items():
             value = getattr(self, name)
             try:
                 stream = _write_bftype(
-                    stream, field, value, proxy, opts
+                    stream, field, value, proxy, ctx
                 )
             except SerializeFieldError as e:
                 e.push_stack(self.__class__.__name__, name)
@@ -1433,7 +1433,7 @@ def _read_bftype(
     stream: BitstreamReader,
     bftype: BFType,
     proxy: AttrProxy,
-    opts: t.Any
+    ctx: t.Any
 ) -> t.Tuple[t.Any, BitstreamReader]:
     match bftype:
         case BFBits(n=n):
@@ -1446,26 +1446,26 @@ def _read_bftype(
             acc: t.List[t.Any] = []
             for _ in range(n):
                 item, stream = _read_bftype(
-                    stream, inner, proxy, opts
+                    stream, inner, proxy, ctx
                 )
                 acc.append(item)
             return acc, stream
 
         case BFMap(inner=inner, vm=vm):
             value, stream = _read_bftype(
-                stream, inner, proxy, opts
+                stream, inner, proxy, ctx
             )
             return vm.deserialize(value), stream
 
         case BFDynSelf(fn=fn):
-            return _read_bftype(stream, undisguise(fn(proxy)), proxy, opts)
+            return _read_bftype(stream, undisguise(fn(proxy)), proxy, ctx)
 
         case BFDynSelfN(fn=fn):
-            return _read_bftype(stream, undisguise(fn(proxy, stream.bits_remaining())), proxy, opts)
+            return _read_bftype(stream, undisguise(fn(proxy, stream.bits_remaining())), proxy, ctx)
 
         case BFLit(inner=inner, default=default):
             value, stream = _read_bftype(
-                stream, inner, proxy, opts
+                stream, inner, proxy, ctx
             )
             if value != default:
                 raise ValueError(
@@ -1479,7 +1479,7 @@ def _read_bftype(
         case BFBitfield(inner=inner, n=n):
             substream, stream = stream.take_stream(n)
 
-            value, substream = inner.__bydantic_read_stream__(substream, opts)
+            value, substream = inner.__bydantic_read_stream__(substream, ctx)
 
             if substream.bits_remaining():
                 raise ValueError(
@@ -1494,7 +1494,7 @@ def _write_bftype(
     bftype: BFType,
     value: t.Any,
     proxy: AttrProxy,
-    opts: t.Any
+    ctx: t.Any
 ) -> BitstreamWriter:
     match bftype:
         case BFBits(n=n):
@@ -1514,7 +1514,7 @@ def _write_bftype(
                 raise ValueError(f"expected {n} items, got {len(value)}")
             for item in value:
                 stream = _write_bftype(
-                    stream, inner, item, proxy, opts
+                    stream, inner, item, proxy, ctx
                 )
             return stream
 
@@ -1539,17 +1539,17 @@ def _write_bftype(
                         f"expected {expected_type.__name__}, got {type(value).__name__}"
                     )
 
-            return _write_bftype(stream, inner, vm.serialize(value), proxy, opts)
+            return _write_bftype(stream, inner, vm.serialize(value), proxy, ctx)
 
         case BFDynSelf(fn=fn):
-            return _write_bftype(stream, undisguise(fn(proxy)), value, proxy, opts)
+            return _write_bftype(stream, undisguise(fn(proxy)), value, proxy, ctx)
 
         case BFDynSelfN(fn=fn):
             if is_bitfield(value):
-                return value.__bydantic_write_stream__(stream, opts)
+                return value.__bydantic_write_stream__(stream, ctx)
 
             if isinstance(value, (bool, bytes)) or value is None:
-                return _write_bftype(stream, undisguise(value), value, proxy, opts)
+                return _write_bftype(stream, undisguise(value), value, proxy, ctx)
 
             raise TypeError(
                 f"dynamic fields that use discriminators with 'n bits remaining' "
@@ -1560,7 +1560,7 @@ def _write_bftype(
         case BFLit(inner=inner, default=default):
             if value != default:
                 raise ValueError(f"expected {default!r}, got {value!r}")
-            return _write_bftype(stream, inner, value, proxy, opts)
+            return _write_bftype(stream, inner, value, proxy, ctx)
 
         case BFNone():
             if value is not None:
@@ -1576,7 +1576,7 @@ def _write_bftype(
                 raise ValueError(
                     f"expected Bitfield of length {n}, got {value.length()}"
                 )
-            return value.__bydantic_write_stream__(stream, opts)
+            return value.__bydantic_write_stream__(stream, ctx)
 
 
 def _distill_field(type_hint: t.Any, value: t.Any) -> BFType:
