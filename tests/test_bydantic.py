@@ -89,10 +89,10 @@ def test_basic_context():
         a: int
 
     def ctx_disc(x: Foo):
-        if x.bitfield_context is None:
+        if x.ctx is None:
             return None
 
-        if x.bitfield_context.a == 10:
+        if x.ctx.a == 10:
             return bd.uint_field(8)
         else:
             return None
@@ -109,8 +109,8 @@ def test_basic_context():
     foo2 = Foo.from_bytes_exact(b'\x05', Opts(a=10))
     assert foo2 == foo
 
-    assert foo.bitfield_context == None
-    assert foo2.bitfield_context == None
+    assert foo.ctx == None
+    assert foo2.ctx == None
 
 
 def test_basic_subclasses():
@@ -345,10 +345,10 @@ def test_context():
         a: bool
 
     def foo_disc(x: Foo):
-        if not x.bitfield_context:
+        if not x.ctx:
             raise ValueError("context not set")
 
-        if x.bitfield_context.a:
+        if x.ctx.a:
             return bd.uint_field(8)
         else:
             return bd.str_field(n_bytes=1)

@@ -1146,7 +1146,7 @@ class Bitfield(t.Generic[ContextT]):
 
     __BYDANTIC_CONTEXT_STR__: t.ClassVar[str] = "bitfield_context"
 
-    bitfield_context: ContextT | None = None
+    ctx: ContextT | None = None
     """
     A context object that can be referenced by dynamic fields while
     serializing and deserializing the bitfield. Set by `to_*` and
