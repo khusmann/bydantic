@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field as dataclass_field
-
 from typing_extensions import dataclass_transform, TypeVar as TypeVarDefault, Self
 import typing as t
 import inspect
@@ -1118,20 +1116,6 @@ def dynamic_field(
 ContextT = TypeVarDefault("ContextT", default=None)
 
 
-@dataclass()
-class BitfieldConfig:
-    """
-    A configuration object for the bitfield. This can be used to
-    configure the bitfield's behavior, such as whether to reorder
-    bits when serializing and deserializing.
-    """
-
-    reorder_bits: t.Sequence[int] = dataclass_field(default_factory=list)
-    """
-    A list of bit positions to reorder when serializing and deserializing.
-    """
-
-
 @dataclass_transform(
     kw_only_default=True,
     field_specifiers=(
@@ -1159,13 +1143,6 @@ class Bitfield(t.Generic[ContextT]):
     """A base class for creating bitfields."""
 
     __bydantic_fields__: t.ClassVar[t.Dict[str, BFType]] = {}
-
-    bitfield_config: t.ClassVar[BitfieldConfig] = BitfieldConfig()
-    """
-    A configuration object for the bitfield. This can be used to
-    configure the bitfield's behavior, such as whether to reorder
-    bits when serializing and deserializing.
-    """
 
     __BYDANTIC_CONTEXT_STR__: t.ClassVar[str] = "bitfield_context"
 
@@ -1412,8 +1389,6 @@ class Bitfield(t.Generic[ContextT]):
     ):
         proxy: AttrProxy = AttrProxy({cls.__BYDANTIC_CONTEXT_STR__: opts})
 
-        stream = stream.reorder(cls.bitfield_config.reorder_bits)
-
         for name, field in cls.__bydantic_fields__.items():
             try:
                 value, stream = _read_bftype(
@@ -1451,7 +1426,7 @@ class Bitfield(t.Generic[ContextT]):
                     e, self.__class__.__name__, name
                 ) from e
 
-        return stream.unreorder(self.bitfield_config.reorder_bits)
+        return stream
 
 
 def _read_bftype(
