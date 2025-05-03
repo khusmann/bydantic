@@ -502,10 +502,10 @@ def str_field(*, n_bytes: int, encoding: str = "utf-8", default: str | ellipsis 
 
     class BytesAsStr:
         def deserialize(self, x: bytes) -> str:
-            return x.decode(encoding).rstrip("\0")
+            return x.rstrip(b"\0").decode(encoding)
 
         def serialize(self, y: str) -> bytes:
-            return y.ljust(n_bytes, "\0").encode(encoding)
+            return y.encode(encoding).ljust(n_bytes, b"\0")
 
     return _bf_map_helper(bytes_field(n_bytes=n_bytes), BytesAsStr(), default=d)
 

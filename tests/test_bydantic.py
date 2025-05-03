@@ -80,6 +80,10 @@ def test_str_field():
     assert work.to_bytes() == b'hello\x00\x00\x00'
     assert Work.from_bytes_exact(work.to_bytes()) == work
 
+    work2 = Work(a="你好")
+    assert work2.to_bytes() == b'\xe4\xbd\xa0\xe5\xa5\xbd\x00\x00'
+    assert Work.from_bytes_exact(work2.to_bytes()) == work2
+
     with pytest.raises(bd.SerializeFieldError):
         Work(a="123456789").to_bytes()
 
