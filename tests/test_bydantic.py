@@ -8,11 +8,6 @@ from enum import IntEnum
 
 import bydantic as bd
 
-from bydantic.utils import (
-    reorder_bits,
-    unreorder_bits
-)
-
 
 def test_basic():
     class Work(bd.Bitfield):
@@ -134,22 +129,6 @@ def test_basic_subclasses():
     work2 = Work2(a=1, b=[1, 2, 3, 4], c="abc", d=b"abcd")
     assert work2.to_bytes() == b'\x12\x9cabcabcd'
     assert Work2.from_bytes_exact(work2.to_bytes()) == work2
-
-
-def test_basic_reorder():
-    class Work(bd.Bitfield):
-        a: int = bd.uint_field(4)
-        b: t.List[int] = bd.list_field(bd.uint_field(3), 4)
-        c: str = bd.str_field(n_bytes=3)
-        d: bytes = bd.bytes_field(n_bytes=4)
-
-        bitfield_config = bd.BitfieldConfig(
-            reorder_bits=[*range(56, 56+16)]
-        )
-
-    work = Work(a=1, b=[1, 2, 3, 4], c="abc", d=b"abcd")
-    assert work.to_bytes() == b'abcabcd\x12\x9c'
-    assert Work.from_bytes_exact(work.to_bytes()) == work
 
 
 def test_classvars():
@@ -279,14 +258,6 @@ def test_default_children_err():
         class Fail(bd.Bitfield):
             a: t.List[int] = bd.list_field(bd.uint_field(4, default=10), 4)
         print(Fail)
-
-
-def test_bit_reorder():
-    b = tuple(i == "1" for i in "101100")
-    order = [1, 3, 5]
-
-    assert reorder_bits(b, order) == tuple(i == "1" for i in "010110")
-    assert unreorder_bits(reorder_bits(b, order), order) == b
 
 
 def test_nested_deserialize_error():
