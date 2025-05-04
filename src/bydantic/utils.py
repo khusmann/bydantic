@@ -2,6 +2,43 @@ from __future__ import annotations
 import typing as t
 
 
+def _make_pairs(order: t.Sequence[int], size: int):
+    if not all(i < size for i in order) or not all(i >= 0 for i in order):
+        raise ValueError(
+            f"some indices in the reordering are out-of-bounds"
+        )
+
+    order_set = frozenset(order)
+
+    if len(order_set) != len(order):
+        raise ValueError(
+            f"duplicate indices in reordering"
+        )
+
+    return zip(
+        range(size),
+        (*order, *(i for i in range(size) if i not in order_set))
+    )
+
+
+def reorder_bits(data: t.Sequence[bool], order: t.Sequence[int]) -> t.Tuple[bool, ...]:
+    if not order:
+        return tuple(data)
+
+    pairs = _make_pairs(order, len(data))
+
+    return tuple(data[i] for _, i in pairs)
+
+
+def unreorder_bits(data: t.Sequence[bool], order: t.Sequence[int]) -> t.Tuple[bool, ...]:
+    if not order:
+        return tuple(data)
+
+    pairs = sorted(_make_pairs(order, len(data)), key=lambda x: x[1])
+
+    return tuple(data[i] for i, _ in pairs)
+
+
 def bytes_to_bits(data: t.ByteString) -> t.Tuple[bool, ...]:
     return tuple(
         bit for byte in data for bit in uint_to_bits(byte, 8)
@@ -63,6 +100,9 @@ class BitstreamWriter:
     def as_bytes(self) -> bytes:
         return bits_to_bytes(self._bits)
 
+    def unreorder(self, order: t.Sequence[int]) -> BitstreamWriter:
+        return BitstreamWriter(unreorder_bits(self._bits, order))
+
 
 class BitstreamReader:
     _bits: t.Tuple[bool, ...]
@@ -117,6 +157,9 @@ class BitstreamReader:
 
     def as_bytes(self) -> bytes:
         return self.take_bytes(self.bytes_remaining())[0]
+
+    def reorder(self, order: t.Sequence[int]) -> BitstreamReader:
+        return BitstreamReader(reorder_bits(self._bits, order))
 
 
 class AttrProxy(t.Mapping[str, t.Any]):
