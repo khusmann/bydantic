@@ -115,6 +115,7 @@ This just scratches the surface of what bydantic can do... continue reading
   (e.g. `int_field`, `str_field`, `bytes_field`, etc.)
 - [Field type combinators](https://kylehusmann.com/bydantic/field-type-reference#field-type-combinators)
   (e.g. `mapped_field`, `list_field`, `dynamic_field`, etc.)
+- [Global serialization / deserialization context](https://kylehusmann.com/bydantic/global-context/)
 - Clear error messages for serialization / deserialization failures, even when
   fields are deeply nested
 
