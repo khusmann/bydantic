@@ -1,14 +1,15 @@
 # Global Context
 
 As we saw in the [previous chapter](complex-data-structures), `dynamic_field`s
-enable field types to be decided on the fly, based on the local serialization /
-deserialization context: the values of the fields parsed so far, or by the
-number of bits remaining in the stream.
+enable field types to be decided on the fly, based on the values of the fields
+parsed so far, or by the number of bits remaining in the stream. In other words,
+the field type of a `dynamic_field` can be determined by the local serialization
+/ deserialization context.
 
-It is also possible to pass an arbitrary global context object to a bitfield to
-use when serializaing or deserializing `dynamic_field`s. It can be useful for
-situations when your bitfield may have different field types based on the
-capabilities of the device or version of the firmware.
+It is also possible to pass an arbitrary _global_ context object to a bitfield
+to use when serializaing or deserializing `dynamic_field`s. This feature can be
+useful for situations when your bitfield may have different field types based on
+the device's configuration, capabilities, or version of the firmware.
 
 ## A simple example: customizing string encoding
 
