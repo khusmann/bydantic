@@ -7,7 +7,7 @@ nav:
   - Getting Started: getting-started.md
   - More Field Types: more-field-types.md
   - Complex Data Structures: complex-data-structures.md
-  - Advanced Features: advanced-features.md
+  - Global Context: global-context.md
   - Field Type Reference: field-type-reference.md
   - Bitfield Class Reference: bitfield-class-reference.md
 

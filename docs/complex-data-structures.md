@@ -357,9 +357,9 @@ In this chapter, we introduced three new field type combinators: `list_field`,
 `bitfield_field`, and `dynamic_field`, and showed how they can be used to create
 more complex data structures.
 
-The [next chapter](advanced-features.md) will cover some of bydantic's more
-advanced features, but these features are still experimental and not necessary
-to use the library.
+The [next chapter](global-context.md) will cover how bitfields can use global
+context to inform `dynamic_field` discriminators. But this is somewhat of an
+advanced feature, and not necessary to use the library.
 
 This completes our tour of the field types and combinators available in
 bydantic. Congratulations, now you can define bitfields like a pro!
