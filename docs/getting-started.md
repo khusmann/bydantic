@@ -174,7 +174,7 @@ documentation.
 For a complete list of available field types and their usage, see the
 [Field Type Reference](field-type-reference.md).
 
-## Other deserialization methods
+## Other Deserialization Methods
 
 In the above example, we used `from_bytes_exact()` to deserialize the weather
 station's packets from bytes. `from_bytes()`, by contrast, will parse a single

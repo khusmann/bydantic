@@ -11,7 +11,7 @@ to use when serializaing or deserializing `dynamic_field`s. This feature can be
 useful for situations when your bitfield may have different field types based on
 the device's configuration, capabilities, or version of the firmware.
 
-## A simple example: customizing string encoding
+## A Simple Example: Customizing String Encoding
 
 Let's look at a simple example, a bitfield that has the ability to customize its
 string encoding based on the context passed when serializaing / deserializing
@@ -59,7 +59,7 @@ creating the `Foo` class -- this allows its type to be known in the
 `discriminator` function (so when you press "." on the `ctx` field in your
 discriminator you get all of the wonderful autocomplete features of your IDE).
 
-## One more example
+## One More Example
 
 Let's continue our running weather station theme from the previous chapters.
 Here's a bitfield definition that allows you to enable / disable features of a

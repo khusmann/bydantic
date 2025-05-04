@@ -81,7 +81,7 @@ WeatherPacket2.from_bytes_exact(
 
 Ok, it works! Now let's take a look at the definition, field by field.
 
-## Field-by-field explanation
+## Field-by-Field Explanation
 
 ### `_header`
 
