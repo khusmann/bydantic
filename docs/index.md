@@ -29,9 +29,6 @@ bydantic is available on PyPI and can be installed using `pip`:
 pip install bydantic
 ```
 
-Note: Consider the current version as somewhat of a developer preview. bydantic
-is still under active development, and the API is still not quite settled.
-
 ## Quick Start
 
 Here's a simple example of how bydantic can be used:
