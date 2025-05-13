@@ -138,7 +138,7 @@ this feature should probably be used sparingly. If you find yourself using a lot
 of global context, it may be a sign that you should consider making a separate
 bitfield type for each configuration.
 
-Global context is a newer feature in bydantic, so I would love to hear how you
+Global context is a newer feature in Bydantic, so I would love to hear how you
 are using it (or not using it) in your projects. If you have any feedback or
 ideas, I'd love to hear from you! You can reach me at
 [bydantic@kylehusmann.com](mailto: bydantic@kylehusmann.com).

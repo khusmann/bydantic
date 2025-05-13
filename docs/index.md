@@ -1,29 +1,29 @@
 ---
-title: Welcome to bydantic
+title: Welcome to Bydantic
 ---
 
 <!-- BEGIN CONTENT -->
 
-# bydantic
+# Bydantic
 
 [![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 ![PyPI - Version](https://img.shields.io/pypi/v/bydantic)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/bydantic)
 
-`bydantic` is a Python library for serializing and deserializing bitfields.
-bydantic allows you to declaratively define bitfields as Python classes with
+`Bydantic` is a Python library for serializing and deserializing bitfields.
+Bydantic allows you to declaratively define bitfields as Python classes with
 type hints, which then can be automatically serialized and deserialized to and
 from raw bytes.
 
-The name bydantic is a portmanteau of "bit" and "pydantic" -- just as
-[pydantic](https://docs.pydantic.dev) gives developers a way to declaratively
+The name Bydantic is a portmanteau of "bit" and "Pydantic" -- just as
+[Pydantic](https://docs.pydantic.dev) gives developers a way to declaratively
 define data models with type hints and then serialize and deserialize raw
-objects against those models, bydantic gives developers a way to do the same
+objects against those models, Bydantic gives developers a way to do the same
 with bitfields.
 
 ## Installation
 
-bydantic is available on PyPI and can be installed using `pip`:
+Bydantic is available on PyPI and can be installed using `pip`:
 
 ```bash
 pip install bydantic
@@ -31,7 +31,7 @@ pip install bydantic
 
 ## Quick Start
 
-Here's a simple example of how bydantic can be used:
+Here's a simple example of how Bydantic can be used:
 
 ```python
 import bydantic as bd
@@ -73,7 +73,7 @@ foo2 = Foo.from_bytes_exact(b'\x34y')
 print(foo2) # Foo(a=3, b=4, c='y')
 ```
 
-The power of bydantic, however, is that field types can be composed into complex
+The power of Bydantic, however, is that field types can be composed into complex
 data structures. For example:
 
 ```python
@@ -103,7 +103,7 @@ bar2 = Bar.from_bytes_exact(b'\x01x#y*')
 print(bar2) # Bar(d=[Foo(a=0, b=1, c='x'), Foo(a=2, b=3, c='y')], e=42)
 ```
 
-This just scratches the surface of what bydantic can do... continue reading
+This just scratches the surface of what Bydantic can do... continue reading
 [the docs](https://kylehusmann.com/bydantic/getting-started) for more info.
 
 ## Features
@@ -118,7 +118,7 @@ This just scratches the surface of what bydantic can do... continue reading
 
 ## Related Projects
 
-- [pydantic](https://docs.pydantic.dev)
+- [Pydantic](https://docs.pydantic.dev)
 
 - [bitproto](https://bitproto.readthedocs.io/)
 

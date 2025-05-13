@@ -23,7 +23,7 @@ packet-beta
 15: "sensor_error"
 ```
 
-Without a library like bydantic, parsing this information would require manual
+Without a library like Bydantic, parsing this information would require manual
 bit manipulation and byte handling. For example, you might do something like
 this:
 
@@ -91,15 +91,15 @@ encode_weather_data(-1, 63, 7, True) # b'\xFF\xFF'
 ```
 
 This is a lot of boilerplate code to write and maintain, especially if you have
-multiple fields or more complex data structures. This is where bydantic comes
+multiple fields or more complex data structures. This is where Bydantic comes
 in.
 
-## Using bydantic
+## Using Bydantic
 
-With bydantic, we can declaratively define the structure of our protocol using
+With Bydantic, we can declaratively define the structure of our protocol using
 Python classes and type hints, and then you get serialization / deserialization
 methods for free. Here's how we would define the same weather data structure
-using bydantic:
+using Bydantic:
 
 ```python
 import bydantic as bd
@@ -164,7 +164,7 @@ WeatherPacket(
 
 As you can see, everything "just works".
 
-In addition to the field types demonstrated above, bydantic supports a variety
+In addition to the field types demonstrated above, Bydantic supports a variety
 of other primitive field types, including fields for `bytes` and `str` values.
 These field types can be composed into more complex data structures using
 combinators like `list_field`, `mapped_field`, and `dynamic_field`, which will
@@ -235,7 +235,7 @@ while True:
 
 ## Next Steps
 
-As you can see, bydantic makes it easy to define and work with binary protocols
+As you can see, Bydantic makes it easy to define and work with binary protocols
 in Python. It provides a simple and declarative way to define bitfields, and
 handles serialization and deserialization for you.
 

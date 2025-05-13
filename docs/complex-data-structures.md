@@ -362,7 +362,7 @@ context to inform `dynamic_field` discriminators. But this is somewhat of an
 advanced feature, and not necessary to use the library.
 
 This completes our tour of the field types and combinators available in
-bydantic. Congratulations, now you can define bitfields like a pro!
+Bydantic. Congratulations, now you can define bitfields like a pro!
 
 For quick reference of field types and capabilities of the `Bitfield` class, you
 can check out the [Field Type Reference](field-type-reference.md) and

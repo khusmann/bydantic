@@ -16,7 +16,7 @@ as follows:
 | 123     | Sensor Error   | bool (1)      | Sensor error flag (1 = error)                         |
 | 124-127 | (Pad)          | uint (4)      | Padding bits, always `0`                              |
 
-With bydantic, definition can be translated into a Bitfield class that looks
+With Bydantic, definition can be translated into a Bitfield class that looks
 like this:
 
 ```python
@@ -100,10 +100,10 @@ default value in the definition to indicate the field is private and not
 necessary to provide when creating a new instance of the class.
 
 In addition to `lit_bytes_field()`, other literal field types available in
-bydantic include `lit_uint_field`, `lit_int_field`, and `lit_str_field`.
+Bydantic include `lit_uint_field`, `lit_int_field`, and `lit_str_field`.
 
 Because the size of a literal `bytes` or `str` field can be inferred from the
-literal value, bydantic allows you to omit the `lit_bytes_field()` or
+literal value, Bydantic allows you to omit the `lit_bytes_field()` or
 `lit_str_field()` call and simply use the value itself. So the following is
 equivalent to the above definition of `_header`:
 
@@ -172,7 +172,7 @@ class ValueMapper(t.Protocol[T, P]):
         ...
 ```
 
-Here, we're using `Scale`, a built-in `ValueMapper` defined in bydantic as
+Here, we're using `Scale`, a built-in `ValueMapper` defined in Bydantic as
 follows:
 
 ```python
