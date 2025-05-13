@@ -1,9 +1,9 @@
-site_name: bydantic
+site_name: Bydantic
 site_url: https://kylehusmann.com/bydantic
 repo_url: https://github.com/khusmann/bydantic
 
 nav:
-  - Welcome to bydantic: index.md
+  - Welcome to Bydantic: index.md
   - Getting Started: getting-started.md
   - More Field Types: more-field-types.md
   - Complex Data Structures: complex-data-structures.md
