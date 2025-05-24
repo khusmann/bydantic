@@ -45,7 +45,7 @@ class Foo(bd.Bitfield):
 This defines a bitfield with three fields: `a` and `b` are 4-bit unsigned
 integers, and `c` is a 1-byte (8-bit) string:
 
-![Bitfield Diagram](https://kylehusmann.com/bydantic/assets/example_foo.svg)
+![Bitfield Diagram](https://bydantic.kylehusmann.com/assets/example_foo.svg)
 
 <!--
 
@@ -104,15 +104,15 @@ print(bar2) # Bar(d=[Foo(a=0, b=1, c='x'), Foo(a=2, b=3, c='y')], e=42)
 ```
 
 This just scratches the surface of what Bydantic can do... continue reading
-[the docs](https://kylehusmann.com/bydantic/getting-started) for more info.
+[the docs](https://bydantic.kylehusmann.com/getting-started) for more info.
 
 ## Features
 
-- [Field type primitives](https://kylehusmann.com/bydantic/field-type-reference#field-type-primitives)
+- [Field type primitives](https://bydantic.kylehusmann.com/field-type-reference#field-type-primitives)
   (e.g. `int_field`, `str_field`, `bytes_field`, etc.)
-- [Field type combinators](https://kylehusmann.com/bydantic/field-type-reference#field-type-combinators)
+- [Field type combinators](https://bydantic.kylehusmann.com/field-type-reference#field-type-combinators)
   (e.g. `mapped_field`, `list_field`, `dynamic_field`, etc.)
-- [Global serialization / deserialization context](https://kylehusmann.com/bydantic/global-context/)
+- [Global serialization / deserialization context](https://bydantic.kylehusmann.com/global-context/)
 - Clear error messages for serialization / deserialization failures, even when
   fields are deeply nested
 
