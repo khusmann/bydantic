@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+    <url>
+         <loc>https://bydantic.kylehusmann.com/</loc>
+         <lastmod>2025-05-24</lastmod>
+    </url>
+    <url>
+         <loc>https://bydantic.kylehusmann.com/bitfield-class-reference/</loc>
+         <lastmod>2025-05-24</lastmod>
+    </url>
+    <url>
+         <loc>https://bydantic.kylehusmann.com/complex-data-structures/</loc>
+         <lastmod>2025-05-24</lastmod>
+    </url>
+    <url>
+         <loc>https://bydantic.kylehusmann.com/field-type-reference/</loc>
+         <lastmod>2025-05-24</lastmod>
+    </url>
+    <url>
+         <loc>https://bydantic.kylehusmann.com/getting-started/</loc>
+         <lastmod>2025-05-24</lastmod>
+    </url>
+    <url>
+         <loc>https://bydantic.kylehusmann.com/global-context/</loc>
+         <lastmod>2025-05-24</lastmod>
+    </url>
+    <url>
+         <loc>https://bydantic.kylehusmann.com/more-field-types/</loc>
+         <lastmod>2025-05-24</lastmod>
+    </url>
+</urlset>
